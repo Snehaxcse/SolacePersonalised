@@ -1,10 +1,21 @@
 import type { BgTexture } from './studioTypes';
 
-export const ARTIST_PALETTE = [
-  '#2C1810', '#8B3A3A', '#C4622D', '#E8A87C',
-  '#F5E6C8', '#8B7355', '#4A6741', '#6B8F71',
-  '#3D5A73', '#7B9EC0', '#9B8EA8', '#F0D5C8',
+export const ARTIST_SWATCHES = [
+  { hex: '#2C1810', name: 'ink brown' },
+  { hex: '#8B3A3A', name: 'brick' },
+  { hex: '#C4622D', name: 'ember' },
+  { hex: '#E8A87C', name: 'clay' },
+  { hex: '#F5E6C8', name: 'cream' },
+  { hex: '#8B7355', name: 'oak' },
+  { hex: '#4A6741', name: 'moss' },
+  { hex: '#6B8F71', name: 'sage' },
+  { hex: '#3D5A73', name: 'slate' },
+  { hex: '#7B9EC0', name: 'sky' },
+  { hex: '#9B8EA8', name: 'lilac' },
+  { hex: '#F0D5C8', name: 'blush' },
 ];
+
+export const ARTIST_PALETTE = ARTIST_SWATCHES.map(s => s.hex);
 
 export const COLOR_MOODS = [
   { name: 'Ember', bg: '#C4622D' },
@@ -16,12 +27,12 @@ export const COLOR_MOODS = [
   { name: 'Petal', bg: '#F0C5C5' },
 ];
 
-export const BG_TEXTURES: { key: BgTexture; label: string }[] = [
-  { key: 'blank', label: '—' },
-  { key: 'dots', label: '·' },
-  { key: 'watercolor', label: '~' },
-  { key: 'starry', label: '✦' },
-  { key: 'foggy', label: '○' },
+export const BG_TEXTURES: { key: BgTexture; label: string; name: string }[] = [
+  { key: 'blank', label: '—', name: 'blank paper' },
+  { key: 'dots', label: '·', name: 'dotted paper' },
+  { key: 'watercolor', label: '~', name: 'watercolor wash' },
+  { key: 'starry', label: '✦', name: 'starry night' },
+  { key: 'foggy', label: '○', name: 'foggy paper' },
 ];
 
 export const MAX_HISTORY = 30;

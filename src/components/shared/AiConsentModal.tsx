@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { AiConsentPreference } from '../../utils/aiConsent';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Props {
   open: boolean;
@@ -10,61 +11,14 @@ interface Props {
 }
 
 const BUTTON_CLASS =
-  'flex-1 px-4 py-3 rounded-full border border-[#3d3229]/25 text-[#3d3229] text-sm font-light tracking-wide hover:border-[#3d3229]/50 hover:bg-[#3d3229]/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3d3229] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5ECD7]';
+  'flex-1 px-4 py-3 rounded-full border border-[#3d3229]/25 text-[#3d3229] text-sm font-light tracking-wide hover:border-[#3d3229]/50 hover:bg-[#3d3229]/5';
 
 export default function AiConsentModal({ open, current, onChoose, onDismiss }: Props) {
   const titleId = useId();
   const descId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const previouslyFocused = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
-
-    const panel = panelRef.current;
-    panel?.focus();
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const focusables = () => {
-      if (!panel) return [];
-      return Array.from(
-        panel.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true');
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onDismiss();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-      const items = focusables();
-      if (items.length === 0) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previouslyFocused?.focus();
-    };
-  }, [open, onDismiss]);
+  useFocusTrap(open, panelRef, onDismiss);
 
   return (
     <AnimatePresence>
@@ -96,7 +50,7 @@ export default function AiConsentModal({ open, current, onChoose, onDismiss }: P
             >
               AI features are optional
             </h2>
-            <div id={descId} className="text-[#3d3229]/75 text-sm font-light leading-6 space-y-3 mb-7">
+            <div id={descId} className="text-[#3d3229]/80 text-sm font-light leading-6 space-y-3 mb-7">
               <p>Solace stores your writing, drawings, and notes on this device.</p>
               <p>
                 If you enable AI features, the relevant input for that feature is sent to an external

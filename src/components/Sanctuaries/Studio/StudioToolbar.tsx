@@ -48,15 +48,18 @@ export default function StudioToolbar(props: Props) {
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.6, duration: 0.6 }}
         className={`fixed left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 ${toolbarOpacity}`}
+        aria-label="Drawing tools"
       >
-        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 flex flex-col gap-1 shadow-sm">
+        <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 flex flex-col gap-1 shadow-sm" role="group" aria-label="Brush">
           {(['pencil', 'marker', 'watercolor', 'eraser'] as BrushType[]).map(b => (
             <button
               key={b}
+              type="button"
               onClick={() => onBrush(b)}
-              title={b}
+              aria-label={`${b} brush`}
+              aria-pressed={brush === b}
               className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs transition-all duration-200 ${
-                brush === b ? 'bg-[#C4622D] text-white' : 'text-[#8B6914] hover:bg-[#C4622D]/10'
+                brush === b ? 'bg-[#C4622D] text-white' : 'text-[#6B4226] hover:bg-[#C4622D]/10'
               }`}
             >
               {b === 'pencil' ? '✏️' : b === 'marker' ? '🖊️' : b === 'watercolor' ? '💧' : '○'}
@@ -65,23 +68,28 @@ export default function StudioToolbar(props: Props) {
         </div>
 
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 flex flex-col items-center shadow-sm">
-          <input
-            type="range" min={1} max={12} value={brushSize}
-            onChange={e => onBrushSize(Number(e.target.value))}
-            className="h-16 appearance-none cursor-pointer"
-            style={{ writingMode: 'vertical-lr', direction: 'rtl', accentColor: '#C4622D' }}
-          />
+          <label className="flex flex-col items-center gap-1">
+            <span className="sr-only">Brush size {brushSize}</span>
+            <input
+              type="range" min={1} max={12} value={brushSize}
+              onChange={e => onBrushSize(Number(e.target.value))}
+              aria-valuetext={`Size ${brushSize}`}
+              className="h-16 appearance-none cursor-pointer"
+              style={{ writingMode: 'vertical-lr', direction: 'rtl', accentColor: '#C4622D' }}
+            />
+          </label>
         </div>
 
         <ArtistPalette color={color} onChange={onColor} />
 
         <button
+          type="button"
           onClick={onUndo}
           disabled={historyLen === 0}
-          title="undo (Ctrl+Z)"
-          className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 shadow-sm flex items-center justify-center text-[#8B6914]/60 hover:text-[#C4622D] disabled:opacity-25 transition-colors duration-200"
+          aria-label="Undo last stroke"
+          className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 shadow-sm flex items-center justify-center text-[#6B4226] hover:text-[#C4622D] disabled:opacity-40 transition-colors duration-200"
         >
-          <RotateCcw size={14} />
+          <RotateCcw size={14} aria-hidden="true" />
         </button>
       </motion.div>
 
@@ -90,15 +98,18 @@ export default function StudioToolbar(props: Props) {
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.8, duration: 0.6 }}
         className={`fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 ${toolbarOpacity}`}
+        aria-label="Studio actions"
       >
         <MoodPalette canvasBg={canvasBg} onChange={onCanvasBg} />
         <TexturePalette bgTexture={bgTexture} onChange={onBgTexture} />
 
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 flex flex-col gap-1.5 shadow-sm">
           <button
+            type="button"
             onClick={onLetItGo}
             disabled={releasing}
-            className="text-[10px] text-[#8B6914]/70 hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1"
+            aria-label="Let the drawing go and clear the canvas"
+            className="text-[10px] text-[#6B4226] hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1"
           >
             let it go
           </button>
@@ -106,7 +117,7 @@ export default function StudioToolbar(props: Props) {
             type="button"
             onClick={onAskSolace}
             disabled={aiActionLoading}
-            className="text-[10px] text-[#8B6914]/70 hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1 disabled:opacity-40"
+            className="text-[10px] text-[#6B4226] hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1 disabled:opacity-40"
           >
             ask Solace
           </button>
@@ -114,54 +125,59 @@ export default function StudioToolbar(props: Props) {
             type="button"
             onClick={onAddSomething}
             disabled={aiActionLoading}
-            className="text-[10px] text-[#8B6914]/70 hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1 disabled:opacity-40"
+            className="text-[10px] text-[#6B4226] hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1 disabled:opacity-40"
           >
             add something
           </button>
           <button
+            type="button"
             onClick={onSave}
-            title="save"
-            className="flex items-center justify-center text-[#8B6914]/60 hover:text-[#C4622D] transition-colors duration-200 py-1"
+            aria-label="Save drawing to gallery and download"
+            className="flex items-center justify-center text-[#6B4226] hover:text-[#C4622D] transition-colors duration-200 py-1"
           >
-            <Save size={13} />
+            <Save size={13} aria-hidden="true" />
           </button>
           {historyLen >= 5 && (
             <button
+              type="button"
               onClick={onReplay}
               disabled={replaying}
-              title="replay"
-              className="flex items-center justify-center text-[#8B6914]/60 hover:text-[#C4622D] transition-colors duration-200 py-1 disabled:opacity-30"
+              aria-label="Replay drawing"
+              className="flex items-center justify-center text-[#6B4226] hover:text-[#C4622D] transition-colors duration-200 py-1 disabled:opacity-40"
             >
-              <Play size={13} />
+              <Play size={13} aria-hidden="true" />
             </button>
           )}
           <button
+            type="button"
             onClick={onOpenGallery}
-            title="gallery"
-            className="flex items-center justify-center text-[#8B6914]/60 hover:text-[#C4622D] transition-colors duration-200 py-1"
+            aria-label="Open gallery"
+            className="flex items-center justify-center text-[#6B4226] hover:text-[#C4622D] transition-colors duration-200 py-1"
           >
-            <Image size={13} />
+            <Image size={13} aria-hidden="true" />
           </button>
         </div>
 
         <button
+          type="button"
           onClick={onToggleWhisper}
-          title="whisper mode"
+          aria-pressed={whisperMode}
+          aria-label={whisperMode ? 'Turn whisper mode off' : 'Turn whisper mode on'}
           className={`bg-white/70 backdrop-blur-sm rounded-2xl p-2 shadow-sm flex items-center justify-center transition-colors duration-300 ${
-            whisperMode ? 'text-[#C4622D]' : 'text-[#8B6914]/40 hover:text-[#8B6914]/80'
+            whisperMode ? 'text-[#C4622D]' : 'text-[#6B4226] hover:text-[#C4622D]'
           }`}
         >
-          <Feather size={13} />
+          <Feather size={13} aria-hidden="true" />
         </button>
 
         <button
+          type="button"
           onClick={onToggleConvo}
-          title="companion"
           aria-label={convoOpen ? 'close companion' : 'open companion'}
           aria-expanded={convoOpen}
-          className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 shadow-sm flex items-center justify-center text-[#8B6914]/40 hover:text-[#8B6914]/80 transition-colors duration-300"
+          className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 shadow-sm flex items-center justify-center text-[#6B4226] hover:text-[#C4622D] transition-colors duration-300"
         >
-          {convoOpen ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+          {convoOpen ? <ChevronRight size={13} aria-hidden="true" /> : <ChevronLeft size={13} aria-hidden="true" />}
         </button>
       </motion.div>
     </>

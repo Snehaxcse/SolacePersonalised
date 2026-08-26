@@ -40,7 +40,7 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
         <button
           type="button"
           onClick={() => setSwitcherOpen(true)}
-          className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-sm"
+          className="flex items-center gap-2 text-left rounded-sm"
           aria-label="Choose another space"
           aria-haspopup="dialog"
           aria-expanded={switcherOpen}
@@ -48,16 +48,16 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
           <span className={`font-serif text-base font-light ${textColor} opacity-90`} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
             Solace
           </span>
-          <span className={`${textColor} opacity-40`}>/</span>
-          <span className={`text-xs font-light ${textColor} opacity-60 tracking-widest uppercase`}>
+          <span className={`${textColor} opacity-50`}>/</span>
+          <span className={`text-xs font-light ${textColor} opacity-80 tracking-widest uppercase`}>
             {SANCTUARIES[sanctuary].label}
           </span>
         </button>
-        <div className="flex items-center gap-3 sm:gap-4">
+        <nav className="flex items-center gap-3 sm:gap-4" aria-label="Sanctuary">
           <button
             type="button"
             onClick={openSettings}
-            className={`text-xs ${textColor} opacity-50 hover:opacity-100 transition-opacity duration-300 tracking-wide focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current rounded-sm`}
+            className={`text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 tracking-wide rounded-sm`}
             aria-label={aiLabel}
             aria-haspopup="dialog"
           >
@@ -66,7 +66,7 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
           <button
             type="button"
             onClick={() => setSupportOpen(true)}
-            className={`text-xs ${textColor} opacity-50 hover:opacity-100 transition-opacity duration-300 tracking-wide focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current rounded-sm`}
+            className={`text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 tracking-wide rounded-sm`}
             aria-label="Support and urgent help"
             aria-haspopup="dialog"
             aria-expanded={supportOpen}
@@ -76,13 +76,13 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
           <button
             type="button"
             onClick={() => navigate('/')}
-            className={`flex items-center gap-1.5 text-xs ${textColor} opacity-50 hover:opacity-100 transition-opacity duration-300 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current rounded-sm`}
+            className={`flex items-center gap-1.5 text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 rounded-sm`}
             aria-label="return home"
           >
-            <DoorOpen size={14} />
+            <DoorOpen size={14} aria-hidden="true" />
             <span className="hidden sm:inline">home</span>
           </button>
-        </div>
+        </nav>
       </motion.header>
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
       <SanctuarySwitcher

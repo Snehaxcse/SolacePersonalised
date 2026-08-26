@@ -28,6 +28,39 @@ body {
   font-family: var(--font-serif);
 }
 
+:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.outline-none:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 200;
+  padding: 0.6rem 1rem;
+  border-radius: 9999px;
+  background: #F5ECD7;
+  color: #3d3229;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+
+.skip-link:focus {
+  top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* Global scrollbar styling */
 ::-webkit-scrollbar {
   width: 4px;

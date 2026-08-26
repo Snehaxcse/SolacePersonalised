@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Props {
   open: boolean;
@@ -7,7 +8,7 @@ interface Props {
 }
 
 const LINK_CLASS =
-  'text-[#3d3229] underline decoration-[#3d3229]/30 underline-offset-4 hover:decoration-[#3d3229]/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3d3229] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5ECD7] rounded-sm';
+  'text-[#3d3229] underline decoration-[#3d3229]/40 underline-offset-4 hover:decoration-[#3d3229]/80 rounded-sm';
 
 export default function SupportDialog({ open, onClose }: Props) {
   const titleId = useId();
@@ -15,54 +16,7 @@ export default function SupportDialog({ open, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const previouslyFocused = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
-
-    closeRef.current?.focus();
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const focusables = () => {
-      const panel = panelRef.current;
-      if (!panel) return [];
-      return Array.from(
-        panel.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => !el.hasAttribute('disabled') && el.getAttribute('aria-hidden') !== 'true');
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-      const items = focusables();
-      if (items.length === 0) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previouslyFocused?.focus();
-    };
-  }, [open, onClose]);
+  useFocusTrap(open, panelRef, onClose, closeRef);
 
   return (
     <AnimatePresence>
@@ -98,7 +52,7 @@ export default function SupportDialog({ open, onClose }: Props) {
             >
               A note about care
             </h2>
-            <div id={descId} className="text-[#3d3229]/75 text-sm font-light leading-6 space-y-3 mb-6">
+            <div id={descId} className="text-[#3d3229]/80 text-sm font-light leading-6 space-y-3 mb-6">
               <p>
                 Solace can offer a quiet space, but it isn’t emergency or professional
                 mental-health care. It is not therapy, and it is not a diagnosis.
@@ -141,7 +95,7 @@ export default function SupportDialog({ open, onClose }: Props) {
               ref={closeRef}
               type="button"
               onClick={onClose}
-              className="w-full px-4 py-3 rounded-full border border-[#3d3229]/25 text-[#3d3229] text-sm font-light tracking-wide hover:border-[#3d3229]/50 hover:bg-[#3d3229]/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3d3229] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5ECD7]"
+              className="w-full px-4 py-3 rounded-full border border-[#3d3229]/25 text-[#3d3229] text-sm font-light tracking-wide hover:border-[#3d3229]/50 hover:bg-[#3d3229]/5"
             >
               Close
             </button>

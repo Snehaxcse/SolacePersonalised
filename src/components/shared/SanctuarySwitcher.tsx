@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useId, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   SANCTUARY_LABELS,
@@ -6,6 +6,7 @@ import {
   SANCTUARY_TYPES,
   type SanctuaryType,
 } from '../../utils/sanctuaries';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface Props {
   open: boolean;
@@ -17,56 +18,10 @@ interface Props {
 
 export default function SanctuarySwitcher({ open, current, suggested, onSelect, onClose }: Props) {
   const titleId = useId();
+  const descId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-
-    const previouslyFocused = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
-
-    panelRef.current?.focus();
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    const focusables = () => {
-      const panel = panelRef.current;
-      if (!panel) return [];
-      return Array.from(
-        panel.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
-        )
-      ).filter(el => el.getAttribute('aria-hidden') !== 'true');
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-        return;
-      }
-      if (event.key !== 'Tab') return;
-      const items = focusables();
-      if (items.length === 0) return;
-      const first = items[0];
-      const last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = previousOverflow;
-      previouslyFocused?.focus();
-    };
-  }, [open, onClose]);
+  useFocusTrap(open, panelRef, onClose);
 
   return (
     <AnimatePresence>
@@ -83,6 +38,7 @@ export default function SanctuarySwitcher({ open, current, suggested, onSelect, 
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
+            aria-describedby={descId}
             tabIndex={-1}
             className="relative w-full max-w-md rounded-3xl px-6 py-7 outline-none"
             style={{ backgroundColor: '#F5ECD7' }}
@@ -97,7 +53,7 @@ export default function SanctuarySwitcher({ open, current, suggested, onSelect, 
             >
               what do you need right now?
             </h2>
-            <p className="text-[#3d3229]/55 text-xs font-light mb-5 leading-5">
+            <p id={descId} className="text-[#3d3229]/70 text-xs font-light mb-5 leading-5">
               A suggestion is only a starting place. You can visit any space.
             </p>
             <div className="flex flex-col gap-2">
@@ -110,10 +66,10 @@ export default function SanctuarySwitcher({ open, current, suggested, onSelect, 
                     type="button"
                     onClick={() => onSelect(type)}
                     aria-current={isCurrent ? 'page' : undefined}
-                    className="text-left rounded-2xl px-4 py-3 border border-[#3d3229]/15 hover:border-[#3d3229]/40 hover:bg-[#3d3229]/5 transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3d3229] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5ECD7]"
+                    className="text-left rounded-2xl px-4 py-3 border border-[#3d3229]/15 hover:border-[#3d3229]/40 hover:bg-[#3d3229]/5 transition-colors duration-300"
                   >
                     <span className="block text-[#3d3229] text-sm font-light">{SANCTUARY_NEEDS[type]}</span>
-                    <span className="block text-[#3d3229]/45 text-[10px] tracking-wide mt-1">
+                    <span className="block text-[#3d3229]/65 text-[10px] tracking-wide mt-1">
                       {SANCTUARY_LABELS[type]}
                       {isCurrent ? ' · here now' : ''}
                       {isSuggested && !isCurrent ? ' · your suggested space' : ''}
@@ -125,7 +81,7 @@ export default function SanctuarySwitcher({ open, current, suggested, onSelect, 
             <button
               type="button"
               onClick={onClose}
-              className="mt-5 w-full px-4 py-2.5 rounded-full border border-[#3d3229]/20 text-[#3d3229]/70 text-xs font-light tracking-wide hover:border-[#3d3229]/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3d3229]"
+              className="mt-5 w-full px-4 py-2.5 rounded-full border border-[#3d3229]/20 text-[#3d3229] text-xs font-light tracking-wide hover:border-[#3d3229]/40"
             >
               Stay here
             </button>

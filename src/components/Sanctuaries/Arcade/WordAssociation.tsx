@@ -60,52 +60,60 @@ export default function WordAssociation() {
   return (
     <div className="flex flex-col gap-5">
       {!active && !done && (
-        <button onClick={start} disabled={loading}
-          className="self-start text-xs text-[#C084FC]/60 hover:text-[#C084FC] uppercase tracking-widest transition-colors duration-300 border border-[#C084FC]/20 rounded-full px-6 py-2 disabled:opacity-40">
+        <button type="button" onClick={start} disabled={loading}
+          className="self-start text-xs text-[#C084FC] hover:text-[#E9D5FF] uppercase tracking-widest transition-colors duration-300 border border-[#C084FC]/40 rounded-full px-6 py-2 disabled:opacity-40">
           {loading ? 'finding a word...' : 'begin'}
         </button>
       )}
       {active && startWord && (
         <>
           <div className="flex items-center gap-4">
-            <p className="text-[#C084FC] text-2xl font-light" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{startWord}</p>
-            <span className="text-[#F0E6FF]/30 text-sm">{timeLeft}s</span>
+            <p className="text-[#C084FC] text-2xl font-light" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+              <span className="sr-only">Starting word: </span>{startWord}
+            </p>
+            <span className="text-[#F0E6FF]/75 text-sm" aria-label={`${timeLeft} seconds remaining`}>
+              {timeLeft}s
+            </span>
           </div>
-          <input
-            autoFocus
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder="type a word, press space..."
-            className="bg-transparent border-b border-[#C084FC]/20 text-[#F0E6FF] text-sm font-light outline-none pb-1 placeholder-[#F0E6FF]/20"
-          />
+          <label className="flex flex-col gap-1">
+            <span className="text-[#F0E6FF]/70 text-xs">Your word</span>
+            <input
+              autoFocus
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKey}
+              placeholder="type a word, press space..."
+              className="bg-transparent border-b border-[#C084FC]/40 text-[#F0E6FF] text-sm font-light outline-none pb-1 placeholder-[#F0E6FF]/40"
+            />
+          </label>
           <div className="flex flex-wrap gap-2">
             {words.map((w, i) => (
-              <span key={i} className="text-[#F0E6FF]/50 text-xs bg-[#2D2060] px-2 py-1 rounded-full">{w}</span>
+              <span key={i} className="text-[#F0E6FF]/80 text-xs bg-[#2D2060] px-2 py-1 rounded-full">{w}</span>
             ))}
           </div>
         </>
       )}
       {done && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4" aria-live="polite">
+          <p className="text-[#F0E6FF]/80 text-xs">Round complete. {words.length} {words.length === 1 ? 'word' : 'words'}.</p>
           <div className="flex flex-wrap gap-2">
             {words.map((w, i) => (
-              <span key={i} className="text-[#F0E6FF]/50 text-xs bg-[#2D2060] px-2 py-1 rounded-full">{w}</span>
+              <span key={i} className="text-[#F0E6FF]/80 text-xs bg-[#2D2060] px-2 py-1 rounded-full">{w}</span>
             ))}
           </div>
           {observation && (
-            <p className="text-[#C084FC]/70 text-sm italic" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{observation}</p>
+            <p className="text-[#C084FC] text-sm italic" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{observation}</p>
           )}
           {words.length > 0 && !observation && (
             <button
               type="button"
               onClick={reflectOnWords}
-              className="self-start text-xs text-[#C084FC]/60 hover:text-[#C084FC] uppercase tracking-widest transition-colors duration-300 border border-[#C084FC]/20 rounded-full px-5 py-2"
+              className="self-start text-xs text-[#C084FC] hover:text-[#E9D5FF] uppercase tracking-widest transition-colors duration-300 border border-[#C084FC]/40 rounded-full px-5 py-2"
             >
               reflect on my words
             </button>
           )}
-          <button onClick={start} className="self-start text-xs text-[#F0E6FF]/30 hover:text-[#F0E6FF]/60 tracking-wide transition-colors duration-300">
+          <button onClick={start} type="button" className="self-start text-xs text-[#F0E6FF]/75 hover:text-[#F0E6FF] tracking-wide transition-colors duration-300">
             play again
           </button>
         </div>

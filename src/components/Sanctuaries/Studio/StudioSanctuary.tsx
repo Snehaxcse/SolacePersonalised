@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SanctuaryHeader from '../../shared/SanctuaryHeader';
 import { getStudioSuggestion, getAIDrawShape, type AIShapeResult } from '../../../utils/claudeService';
@@ -12,6 +12,7 @@ import StudioGallery, { useStudioGallery } from './StudioGallery';
 import StudioCompanion from './StudioCompanion';
 import StudioWhisper from './StudioWhisper';
 import type { ConvoMessage } from './studioTypes';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 export default function StudioSanctuary() {
   const { requestConsent } = useAiConsent();
@@ -30,6 +31,9 @@ export default function StudioSanctuary() {
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [pendingAdd, setPendingAdd] = useState<AIShapeResult | null>(null);
   const [aiActionLoading, setAiActionLoading] = useState(false);
+  const [liveMessage, setLiveMessage] = useState('');
+  const pendingRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(Boolean(pendingAdd), pendingRef, () => setPendingAdd(null));
 
   const askSolace = async () => {
     await requestConsent({ force: true });
@@ -53,11 +57,14 @@ export default function StudioSanctuary() {
     if (result) setPendingAdd(result);
   };
 
-  const toolbarOpacity = whisperMode ? 'opacity-10 hover:opacity-100 transition-opacity duration-500' : '';
+  const toolbarOpacity = whisperMode ? 'opacity-20 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500' : '';
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: '#F5ECD7' }}>
       <SanctuaryHeader sanctuary="studio" textColor="text-[#6B4226]" />
+      <main id="main">
+        <h1 className="sr-only">the studio</h1>
+        <p className="sr-only" aria-live="polite">{liveMessage}</p>
 
       <StudioCanvas
         canvasRef={canvas.canvasRef}
@@ -88,7 +95,10 @@ export default function StudioSanctuary() {
         aiActionLoading={aiActionLoading}
         onAskSolace={askSolace}
         onAddSomething={offerAiAdd}
-        onSave={() => gallery.saveDrawing(canvas.canvasRef.current, canvas.canvasBg)}
+        onSave={() => {
+          const ok = gallery.saveDrawing(canvas.canvasRef.current, canvas.canvasBg);
+          setLiveMessage(ok ? 'Saved to your gallery and downloaded.' : 'Gallery is full. Remove a piece to make room.');
+        }}
         replaying={canvas.replaying}
         onReplay={canvas.replay}
         onOpenGallery={() => gallery.setShowGallery(true)}
@@ -111,7 +121,7 @@ export default function StudioSanctuary() {
             className="fixed top-20 left-1/2 -translate-x-1/2 z-40 px-4 py-2 bg-white/70 backdrop-blur-sm rounded-full"
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
           >
-            <p className="text-[#8B6914]/60 text-xs tracking-widest">replaying...</p>
+            <p className="text-[#6B4226] text-xs tracking-widest">replaying...</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -123,7 +133,7 @@ export default function StudioSanctuary() {
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <p className="text-[#8B6914]/60 text-sm font-light tracking-widest italic" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
+            <p className="text-[#6B4226] text-sm font-light tracking-widest italic" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
               released.
             </p>
           </motion.div>
@@ -136,6 +146,8 @@ export default function StudioSanctuary() {
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 max-w-xs sm:max-w-sm px-5 py-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-md"
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.5 }}
+            role="status"
+            aria-live="polite"
           >
             <p className="text-[#6B4226]/80 text-sm font-light leading-relaxed text-center italic" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
               {suggestion}
@@ -147,7 +159,9 @@ export default function StudioSanctuary() {
       <AnimatePresence>
         {pendingAdd && (
           <motion.div
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-md max-w-xs text-center"
+            ref={pendingRef}
+            tabIndex={-1}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-md max-w-xs text-center outline-none"
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             role="dialog"
             aria-modal="true"
@@ -160,7 +174,7 @@ export default function StudioSanctuary() {
               <button type="button" onClick={() => { canvas.confirmAiAdd(pendingAdd); setPendingAdd(null); }} className="text-[#C4622D] text-xs">
                 add to drawing
               </button>
-              <button type="button" onClick={() => setPendingAdd(null)} className="text-[#8B6914]/50 text-xs">
+              <button type="button" onClick={() => setPendingAdd(null)} className="text-[#6B4226] text-xs">
                 keep my work
               </button>
             </div>
@@ -186,6 +200,7 @@ export default function StudioSanctuary() {
         galleryFull={gallery.galleryFull}
         onGalleryFullChange={gallery.setGalleryFull}
       />
+      </main>
     </div>
   );
 }

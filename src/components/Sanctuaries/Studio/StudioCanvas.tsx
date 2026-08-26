@@ -52,6 +52,8 @@ export default function StudioCanvas({
         <canvas
           ref={canvasRef}
           className={`w-full h-full touch-none ${cursorStyle}`}
+          role="img"
+          aria-label="Drawing canvas. Drawing requires a mouse, trackpad, or touch. Nearby toolbars can be used with the keyboard."
           onMouseDown={onPointerDown}
           onMouseMove={onPointerMove}
           onMouseUp={onPointerUp}
@@ -60,6 +62,9 @@ export default function StudioCanvas({
           onTouchMove={onPointerMove}
           onTouchEnd={onPointerUp}
         />
+        <p className="sr-only">
+          This canvas is for drawing with a pointer or touch. Save, undo, gallery, and companion controls are available around the canvas.
+        </p>
       </div>
     </>
   );

@@ -11,19 +11,20 @@ interface Props {
 
 export default function StudioWhisper({ enabled, onChange, convoOpen, latestMessage }: Props) {
   useEffect(() => {
+    if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onChange(false);
+      if (e.key === 'Escape' && !convoOpen) onChange(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onChange]);
+  }, [enabled, convoOpen, onChange]);
 
   return (
     <>
       <AnimatePresence>
         {enabled && (
           <motion.p
-            className="fixed bottom-3 right-4 z-30 text-[10px] text-[#6B4226]/20 tracking-widest pointer-events-none"
+            className="fixed bottom-3 right-4 z-30 text-[10px] text-[#6B4226]/70 tracking-widest pointer-events-none"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           >
             whisper mode
@@ -37,7 +38,7 @@ export default function StudioWhisper({ enabled, onChange, convoOpen, latestMess
             style={{ backgroundColor: 'rgba(245,236,215,0.85)', backdropFilter: 'blur(8px)' }}
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
           >
-            <p className="text-[#6B4226]/50 text-xs italic text-center truncate" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
+            <p className="text-[#6B4226]/80 text-xs italic text-center truncate" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
               {latestMessage.text}
             </p>
           </motion.div>
