@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SanctuaryHeader from '../../shared/SanctuaryHeader';
 import { getLibraryReadingNook, getJournalReflection, getWordOfDay } from '../../../utils/claudeService';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
+import { useAiConsent } from '../../../context/AiConsentContext';
 
 type Tab = 'nook' | 'journal' | 'breathe' | 'word';
 
@@ -13,8 +14,8 @@ const BREATHING_PHASES = [
 ];
 
 export default function LibrarySanctuary() {
+  const { requestConsent } = useAiConsent();
   const [tab, setTab] = useState<Tab>('nook');
-  const [weather] = useLocalStorage<string>('solace_quiz_weather', 'cloudy');
 
   // Reading nook
   const [nook, setNook] = useState<{ poem: string; prose: string; sentence: string } | null>(null);
@@ -37,10 +38,10 @@ export default function LibrarySanctuary() {
 
   const loadNook = useCallback(async () => {
     setNookLoading(true);
-    const data = await getLibraryReadingNook(weather);
+    const data = await getLibraryReadingNook();
     setNook(data);
     setNookLoading(false);
-  }, [weather]);
+  }, []);
 
   useEffect(() => {
     if (tab === 'nook' && !nook) loadNook();
@@ -60,10 +61,16 @@ export default function LibrarySanctuary() {
 
   const handleReflect = async () => {
     if (!journalText.trim()) return;
+    await requestConsent({ force: true });
     setReflectLoading(true);
     const r = await getJournalReflection(journalText);
     setReflection(r);
     setReflectLoading(false);
+  };
+
+  const handleGather = async () => {
+    await requestConsent({ force: true });
+    await loadNook();
   };
 
   // Breathing timer
@@ -138,7 +145,7 @@ export default function LibrarySanctuary() {
                       {nook.sentence}
                     </p>
                   </div>
-                  <button onClick={loadNook} className="text-[#C9A84C]/40 hover:text-[#C9A84C]/70 text-xs tracking-wide transition-colors duration-300 text-center">
+                  <button type="button" onClick={handleGather} className="text-[#C9A84C]/40 hover:text-[#C9A84C]/70 text-xs tracking-wide transition-colors duration-300 text-center">
                     gather something else
                   </button>
                 </div>
@@ -157,8 +164,10 @@ export default function LibrarySanctuary() {
                 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', caretColor: '#C9A84C' }}
               />
               <button
+                type="button"
                 onClick={handleReflect}
                 disabled={reflectLoading || !journalText.trim()}
+                aria-label="Ask for an AI reflection on this journal entry"
                 className="self-start text-xs text-[#C9A84C]/60 hover:text-[#C9A84C] transition-colors duration-300 tracking-widest uppercase disabled:opacity-30"
               >
                 {reflectLoading ? 'listening...' : 'reflect'}

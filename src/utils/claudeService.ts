@@ -1,4 +1,10 @@
+import { isAiEnabled } from './aiConsent';
+
 async function invokeClaude(payload: Record<string, unknown>): Promise<string> {
+  if (!isAiEnabled()) {
+    throw new Error('AI not enabled');
+  }
+
   const response = await fetch('/.netlify/functions/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -28,9 +34,9 @@ export async function getStudioSuggestion(colorInfo: string): Promise<string> {
   }
 }
 
-export async function getLibraryReadingNook(weather: string): Promise<{ poem: string; prose: string; sentence: string }> {
+export async function getLibraryReadingNook(): Promise<{ poem: string; prose: string; sentence: string }> {
   try {
-    const raw = await invokeClaude({ action: 'library_nook', weather });
+    const raw = await invokeClaude({ action: 'library_nook' });
     const json = extractJSON(raw);
     if (
       json &&

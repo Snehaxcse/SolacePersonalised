@@ -1,15 +1,22 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DoorOpen } from 'lucide-react';
+import { useAiConsent } from '../../context/AiConsentContext';
 
 interface Props {
   sanctuaryName: string;
   textColor?: string;
-  borderColor?: string;
 }
 
-export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-current', borderColor = 'border-current' }: Props) {
+export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-current' }: Props) {
   const navigate = useNavigate();
+  const { preference, openSettings } = useAiConsent();
+
+  const aiLabel = preference === 'enabled'
+    ? 'AI features are on. Open AI settings.'
+    : preference === 'declined'
+      ? 'Solace is local. Open AI settings.'
+      : 'Open AI settings';
 
   return (
     <motion.header
@@ -27,14 +34,26 @@ export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-curre
           {sanctuaryName}
         </span>
       </div>
-      <button
-        onClick={() => navigate('/')}
-        className={`flex items-center gap-1.5 text-xs ${textColor} opacity-50 hover:opacity-100 transition-opacity duration-300`}
-        aria-label="return home"
-      >
-        <DoorOpen size={14} />
-        <span className="hidden sm:inline">leave</span>
-      </button>
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={openSettings}
+          className={`text-xs ${textColor} opacity-50 hover:opacity-100 transition-opacity duration-300 tracking-wide focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current rounded-sm`}
+          aria-label={aiLabel}
+          aria-haspopup="dialog"
+        >
+          AI
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className={`flex items-center gap-1.5 text-xs ${textColor} opacity-50 hover:opacity-100 transition-opacity duration-300 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current rounded-sm`}
+          aria-label="return home"
+        >
+          <DoorOpen size={14} />
+          <span className="hidden sm:inline">leave</span>
+        </button>
+      </div>
     </motion.header>
   );
 }

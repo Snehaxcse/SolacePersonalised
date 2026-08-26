@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import SanctuaryHeader from '../../shared/SanctuaryHeader';
 import { getGardenReminder } from '../../../utils/claudeService';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
+import { useAiConsent } from '../../../context/AiConsentContext';
 
 interface Stone {
   text: string;
@@ -103,6 +104,7 @@ function PlantSVG({ stage, drooping }: { stage: PlantStage; drooping: boolean })
 type BreathPhase = 'idle' | 'in' | 'hold' | 'out';
 
 export default function GardenSanctuary() {
+  const { preference } = useAiConsent();
   const [stage, setStage] = useLocalStorage<PlantStage>('solace_plant_stage', 0);
   const [visits, setVisits] = useLocalStorage<number>('solace_plant_visits', 0);
   const [firstVisit, setFirstVisit] = useLocalStorage<string>('solace_plant_first_visit', '');
@@ -139,10 +141,11 @@ export default function GardenSanctuary() {
   }, []);
 
   useEffect(() => {
+    if (preference !== 'enabled') return;
     if (!reminder) {
       getGardenReminder().then(r => setReminder(r));
     }
-  }, []);
+  }, [preference]);
 
   const addStone = () => {
     if (!stoneInput.trim()) return;
@@ -338,7 +341,7 @@ export default function GardenSanctuary() {
           )}
 
           {/* Gentle reminder */}
-          {reminder && (
+          {(reminder || preference !== 'enabled') && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -346,7 +349,7 @@ export default function GardenSanctuary() {
               className="text-[#5C8A5E]/50 text-xs font-light italic text-center mt-auto pt-4"
               style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
             >
-              {reminder}
+              {reminder || 'You do not have to earn rest.'}
             </motion.p>
           )}
         </div>

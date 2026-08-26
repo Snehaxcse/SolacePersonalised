@@ -137,15 +137,12 @@ function buildProxyRequest(body: unknown): ProxySuccess | null {
         systemPrompt: `You are a gentle creative companion. The user has been drawing. Based on the colors and energy described, suggest in one soft poetic sentence what you might gently add to their work. Never be prescriptive. Always be warm. Never use the word AI or assistant.`,
       };
     }
-    case 'library_nook': {
-      const weather = readString(body.weather, MAX_SHORT);
-      if (!weather) return null;
+    case 'library_nook':
       return {
         maxTokens: 500,
-        userMessage: `The person is feeling ${weather} today.`,
-        systemPrompt: `Based on the emotional state described, curate three pieces of text: one short poem of 4-6 lines, one paragraph of gentle prose under 60 words, one single sentence of quiet wisdom. Return as JSON: {"poem": string, "prose": string, "sentence": string}. Match the emotional register — if stormy, something that acknowledges darkness. If clear, something that celebrates lightness. Never be falsely cheerful.`,
+        userMessage: 'Offer a quiet reading for today.',
+        systemPrompt: `Curate three pieces of text: one short poem of 4-6 lines, one paragraph of gentle prose under 60 words, one single sentence of quiet wisdom. Return as JSON: {"poem": string, "prose": string, "sentence": string}. Never be falsely cheerful.`,
       };
-    }
     case 'journal_reflection': {
       const journalText = readString(body.journalText, MAX_LONG);
       if (!journalText) return null;
@@ -175,11 +172,11 @@ function buildProxyRequest(body: unknown): ProxySuccess | null {
       };
     case 'word_association_observation': {
       const startWord = readString(body.startWord, MAX_SHORT);
-      const endWord = readString(body.endWord, MAX_SHORT);
+      const endWord = readString(body.endWord, MAX_MEDIUM);
       if (!startWord || !endWord) return null;
       return {
         maxTokens: 150,
-        userMessage: `The person started with "${startWord}" and ended with "${endWord}".`,
+        userMessage: `Starting word: "${startWord}". Word chain: ${endWord}.`,
         systemPrompt: `Given a word association journey, respond with one warm observation about the journey from the first to last word. Be curious, not analytical. Under 25 words.`,
       };
     }

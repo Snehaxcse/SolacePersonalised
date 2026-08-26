@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SanctuaryHeader from '../../shared/SanctuaryHeader';
-import { getWordAssociationStart, getWordAssociationObservation, getFocusMessage, getRandomCuriosity } from '../../../utils/claudeService';
+import { getWordAssociationStart, getWordAssociationObservation, getRandomCuriosity } from '../../../utils/claudeService';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
+import { useAiConsent } from '../../../context/AiConsentContext';
 
 type Tab = 'memory' | 'words' | 'colors' | 'focus' | 'curiosity';
 
@@ -105,6 +106,7 @@ function PatternMemory() {
 
 // ─── Word Association ──────────────────────────────────────────────────────────
 function WordAssociation() {
+  const { requestConsent } = useAiConsent();
   const [startWord, setStartWord] = useState('');
   const [input, setInput] = useState('');
   const [words, setWords] = useState<string[]>([]);
@@ -144,17 +146,18 @@ function WordAssociation() {
     return () => { if (timer.current) clearInterval(timer.current); };
   }, [active]);
 
-  useEffect(() => {
-    if (done && words.length >= 2) {
-      getWordAssociationObservation(words[0], words[words.length - 1]).then(obs => setObservation(obs));
-    }
-  }, [done]);
-
   const handleKey = (e: React.KeyboardEvent) => {
     if ((e.key === ' ' || e.key === 'Enter') && input.trim()) {
       setWords(w => [...w, input.trim()]);
       setInput('');
     }
+  };
+
+  const reflectOnWords = async () => {
+    if (words.length === 0) return;
+    await requestConsent({ force: true });
+    const obs = await getWordAssociationObservation(startWord || words[0], words.join(', '));
+    setObservation(obs);
   };
 
   return (
@@ -195,6 +198,15 @@ function WordAssociation() {
           </div>
           {observation && (
             <p className="text-[#C084FC]/70 text-sm italic" style={{ fontFamily: 'Cormorant Garamond, serif' }}>{observation}</p>
+          )}
+          {words.length > 0 && !observation && (
+            <button
+              type="button"
+              onClick={reflectOnWords}
+              className="self-start text-xs text-[#C084FC]/60 hover:text-[#C084FC] uppercase tracking-widest transition-colors duration-300 border border-[#C084FC]/20 rounded-full px-5 py-2"
+            >
+              reflect on my words
+            </button>
           )}
           <button onClick={start} className="self-start text-xs text-[#F0E6FF]/30 hover:text-[#F0E6FF]/60 tracking-wide transition-colors duration-300">
             play again
@@ -294,7 +306,7 @@ function FocusTimer() {
             setStreak(n => n + 1);
             setMode('rest');
             setSeconds(5 * 60);
-            getFocusMessage().then(m => setMessage(m));
+            setMessage('Something worth noticing was built in that quiet.');
           } else {
             setMode('focus');
             setSeconds(25 * 60);
@@ -344,10 +356,12 @@ function FocusTimer() {
 
 // ─── Curiosity ────────────────────────────────────────────────────────────────
 function Curiosity() {
+  const { requestConsent } = useAiConsent();
   const [fact, setFact] = useState('');
   const [loading, setLoading] = useState(false);
 
   const fetch_ = async () => {
+    await requestConsent({ force: true });
     setLoading(true);
     const f = await getRandomCuriosity();
     setFact(f);

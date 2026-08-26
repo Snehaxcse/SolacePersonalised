@@ -2,8 +2,10 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Feather, RotateCcw, Save, Play, Image, X, ChevronRight, ChevronLeft, Trash2 } from 'lucide-react';
 import SanctuaryHeader from '../../shared/SanctuaryHeader';
-import { getStudioSuggestion, getAIDrawShape, getStudioCompanionMessage } from '../../../utils/claudeService';
+import { getStudioSuggestion, getAIDrawShape, getStudioCompanionMessage, type AIShapeResult } from '../../../utils/claudeService';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
+import { useAiConsent } from '../../../context/AiConsentContext';
+import { isAiEnabled } from '../../../utils/aiConsent';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type BrushType = 'pencil' | 'marker' | 'watercolor' | 'eraser';
@@ -163,6 +165,7 @@ function getBgStyle(texture: BgTexture, moodColor: string | null): React.CSSProp
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function StudioSanctuary() {
+  const { requestConsent } = useAiConsent();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -182,13 +185,10 @@ export default function StudioSanctuary() {
   // Timers & refs
   const lastPos = useRef<{ x: number; y: number } | null>(null);
   const strokeCount = useRef(0);
-  const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const aiDrawTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionStartRef = useRef<number>(Date.now());
   const hasFirstTouch = useRef(false);
   const lastConvoTrigger = useRef<number>(0);
   const isDrawingSession = useRef(false);
-  const drawingMinutesRef = useRef(0);
 
   // Replay
   const [replaying, setReplaying] = useState(false);
@@ -213,6 +213,8 @@ export default function StudioSanctuary() {
   const [galleryFull, setGalleryFull] = useState(false);
   const [expandedImage, setExpandedImage] = useState<GalleryEntry | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [pendingAdd, setPendingAdd] = useState<AIShapeResult | null>(null);
+  const [aiActionLoading, setAiActionLoading] = useState(false);
 
   // First visit tracking
   const [isFirstVisit] = useLocalStorage<boolean>('solace_studio_first_visit', true);
@@ -305,6 +307,7 @@ export default function StudioSanctuary() {
     trigger: Parameters<typeof getStudioCompanionMessage>[0]['trigger'],
     userMsg?: string
   ) => {
+    if (trigger !== 'user_message' && !isAiEnabled()) return;
     const now = Date.now();
     if (trigger !== 'user_message' && now - lastConvoTrigger.current < 45000) return;
     lastConvoTrigger.current = now;
@@ -325,56 +328,54 @@ export default function StudioSanctuary() {
   const sendUserMessage = async () => {
     const text = userInput.trim();
     if (!text) return;
+    await requestConsent({ force: true });
     setUserInput('');
     addMessage({ role: 'user', text });
     await triggerConvo('user_message', text);
   };
 
-  // ── AI Companion Drawing ──────────────────────────────────────────────────
-  const triggerAIDraw = useCallback(async () => {
-    const canvas = canvasRef.current;
-    if (!canvas || strokeCount.current < 3) return;
-    const desc = `canvas has ${getDominantColors()}, stroke count around ${strokeCount.current}`;
-    const result = await getAIDrawShape(desc);
-    if (!result) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let opacity = 0;
-    const fadeIn = () => {
-      opacity += 0.05;
-      ctx.save();
-      ctx.globalAlpha = Math.min(opacity, 0.7);
-      ctx.globalCompositeOperation = 'source-over';
-      drawAIShape(ctx, result.shape, result.position.x, result.position.y, result.color, canvas.width, canvas.height);
-      ctx.restore();
-      if (opacity < 0.7) requestAnimationFrame(fadeIn);
-    };
-    requestAnimationFrame(fadeIn);
-  }, [getDominantColors]);
-
-  const resetAiDrawTimer = useCallback(() => {
-    if (aiDrawTimer.current) clearTimeout(aiDrawTimer.current);
-    aiDrawTimer.current = setTimeout(triggerAIDraw, 3000);
-  }, [triggerAIDraw]);
-
-  // ── Old suggestion (idle 3s) ───────────────────────────────────────────────
-  const triggerSuggestion = useCallback(async () => {
-    if (strokeCount.current < 2) return;
-    const desc = getDominantColors();
-    const text = await getStudioSuggestion(desc);
+  const askSolace = async () => {
+    await requestConsent({ force: true });
+    if (!isAiEnabled()) return;
+    setAiActionLoading(true);
+    const text = await getStudioSuggestion(getDominantColors());
+    setAiActionLoading(false);
     setSuggestion(text);
     setShowSuggestion(true);
     setTimeout(() => setShowSuggestion(false), 6000);
+  };
 
-    // Also trigger "pause" convo message
-    triggerConvo('pause');
-  }, [getDominantColors, triggerConvo]);
+  const offerAiAdd = async () => {
+    await requestConsent({ force: true });
+    if (!isAiEnabled()) return;
+    setAiActionLoading(true);
+    const result = await getAIDrawShape(
+      `canvas has ${getDominantColors()}, stroke count around ${strokeCount.current}`
+    );
+    setAiActionLoading(false);
+    if (result) setPendingAdd(result);
+  };
 
-  const resetIdleTimer = useCallback(() => {
-    if (idleTimer.current) clearTimeout(idleTimer.current);
-    idleTimer.current = setTimeout(triggerSuggestion, 3000);
-  }, [triggerSuggestion]);
+  const confirmAiAdd = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !pendingAdd) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    drawAIShape(
+      ctx,
+      pendingAdd.shape,
+      pendingAdd.position.x,
+      pendingAdd.position.y,
+      pendingAdd.color,
+      canvas.width,
+      canvas.height
+    );
+    ctx.restore();
+    pushSnapshot();
+    setPendingAdd(null);
+  };
 
   // ── Drawing Events ────────────────────────────────────────────────────────
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
@@ -385,7 +386,6 @@ export default function StudioSanctuary() {
     if (!hasFirstTouch.current) {
       hasFirstTouch.current = true;
       setFirstVisitDone(false);
-      triggerConvo('welcome');
     }
 
     setIsDrawing(true);
@@ -443,7 +443,6 @@ export default function StudioSanctuary() {
     }
 
     lastPos.current = pos;
-    resetIdleTimer();
   };
 
   const stopDrawing = () => {
@@ -457,14 +456,6 @@ export default function StudioSanctuary() {
       ctx.globalCompositeOperation = 'source-over';
     }
     pushSnapshot();
-    resetIdleTimer();
-    resetAiDrawTimer();
-
-    // Trigger observation after 2 min
-    drawingMinutesRef.current = getMinutesDrawing();
-    if (drawingMinutesRef.current >= 2) {
-      triggerConvo('observation');
-    }
   };
 
   // ── Let It Go ─────────────────────────────────────────────────────────────
@@ -484,7 +475,6 @@ export default function StudioSanctuary() {
         setHistoryLen(0);
         setTimeout(() => {
           setReleasing(false);
-          triggerConvo('release');
         }, 500);
         return;
       }
@@ -523,8 +513,6 @@ export default function StudioSanctuary() {
       moodColor: canvasBg,
     };
     setGallery(prev => [...prev.slice(-(MAX_GALLERY - 1)), entry]);
-
-    triggerConvo('save');
   };
 
   // ── Delete gallery entry ──────────────────────────────────────────────────
@@ -735,6 +723,24 @@ export default function StudioSanctuary() {
             let it go
           </button>
 
+          <button
+            type="button"
+            onClick={askSolace}
+            disabled={aiActionLoading}
+            className="text-[10px] text-[#8B6914]/70 hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1 disabled:opacity-40"
+          >
+            ask Solace
+          </button>
+
+          <button
+            type="button"
+            onClick={offerAiAdd}
+            disabled={aiActionLoading}
+            className="text-[10px] text-[#8B6914]/70 hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1 disabled:opacity-40"
+          >
+            add something
+          </button>
+
           {/* Save */}
           <button
             onClick={saveDrawing}
@@ -781,6 +787,8 @@ export default function StudioSanctuary() {
         <button
           onClick={() => setConvoOpen(o => !o)}
           title="companion"
+          aria-label={convoOpen ? 'close companion' : 'open companion'}
+          aria-expanded={convoOpen}
           className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 shadow-sm flex items-center justify-center text-[#8B6914]/40 hover:text-[#8B6914]/80 transition-colors duration-300"
         >
           {convoOpen ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
@@ -842,6 +850,31 @@ export default function StudioSanctuary() {
         )}
       </AnimatePresence>
 
+      {/* ── AI add preview ────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {pendingAdd && (
+          <motion.div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-md max-w-xs text-center"
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="ai-add-title"
+          >
+            <p id="ai-add-title" className="text-[#6B4226]/80 text-sm font-light leading-relaxed italic mb-3" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
+              {pendingAdd.description}
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <button type="button" onClick={confirmAiAdd} className="text-[#C4622D] text-xs">
+                add to drawing
+              </button>
+              <button type="button" onClick={() => setPendingAdd(null)} className="text-[#8B6914]/50 text-xs">
+                keep my work
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ── Conversation Panel ────────────────────────────────────────────── */}
       <AnimatePresence>
         {convoOpen && (
@@ -898,10 +931,13 @@ export default function StudioSanctuary() {
                 onChange={e => setUserInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendUserMessage()}
                 placeholder="say something..."
+                aria-label="Message to companion"
                 className="flex-1 bg-transparent text-[#6B4226] text-xs font-light outline-none placeholder-[#8B6914]/30"
               />
               <button
+                type="button"
                 onClick={sendUserMessage}
+                aria-label="Send message"
                 className="text-[#C4622D]/50 hover:text-[#C4622D] transition-colors text-xs"
               >
                 →
