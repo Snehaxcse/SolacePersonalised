@@ -4,6 +4,7 @@ import SanctuaryHeader from '../../shared/SanctuaryHeader';
 import { getLibraryReadingNook, getJournalReflection, getWordOfDay } from '../../../utils/claudeService';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 import { useAiConsent } from '../../../context/AiConsentContext';
+import { readQuizWeather } from '../../../utils/solaceMemory';
 
 type Tab = 'nook' | 'journal' | 'breathe' | 'word';
 
@@ -16,6 +17,7 @@ const BREATHING_PHASES = [
 export default function LibrarySanctuary() {
   const { requestConsent } = useAiConsent();
   const [tab, setTab] = useState<Tab>('nook');
+  const weather = readQuizWeather();
 
   // Reading nook
   const [nook, setNook] = useState<{ poem: string; prose: string; sentence: string } | null>(null);
@@ -121,7 +123,11 @@ export default function LibrarySanctuary() {
         <AnimatePresence mode="wait">
           {tab === 'nook' && (
             <motion.div key="nook" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }}>
-              <h2 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-8">curated for you</h2>
+              <h2 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-2">curated for you</h2>
+              {weather && (
+                <p className="text-[#F5F0E8]/35 text-xs font-light italic mb-8">for a {weather} day</p>
+              )}
+              {!weather && <div className="mb-8" />}
               {nookLoading && <p className="text-[#F5F0E8]/40 text-sm italic">gathering words...</p>}
               {nook && (
                 <div className="flex flex-col gap-6">

@@ -1,6 +1,13 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import {
+  SANCTUARY_LABELS,
+  SANCTUARY_NEEDS,
+  SANCTUARY_TYPES,
+  readSuggestedSanctuary,
+  type SanctuaryType,
+} from '../utils/solaceMemory';
 
 const gradientColors = [
   ['#C4622D', '#1A1F3A'],
@@ -12,6 +19,8 @@ const gradientColors = [
 export default function Landing() {
   const navigate = useNavigate();
   const [colorIndex, setColorIndex] = useState(0);
+  const [suggested] = useState<SanctuaryType | null>(() => readSuggestedSanctuary());
+  const [choosing, setChoosing] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,7 +39,6 @@ export default function Landing() {
         transition: 'background 6s ease',
       }}
     >
-      {/* Very slow breathing background */}
       <motion.div
         className="absolute inset-0 pointer-events-none"
         animate={{
@@ -54,41 +62,122 @@ export default function Landing() {
           Solace
         </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="text-lg sm:text-xl font-light tracking-[0.2em] uppercase text-white/60 mb-2"
-          style={{ letterSpacing: '0.25em' }}
-        >
-          find your calm.
-        </motion.p>
+        {suggested ? (
+          <>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="text-lg sm:text-xl font-light text-white/70 mb-2"
+              style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+            >
+              welcome back.
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.75 }}
+              className="text-sm font-light text-white/35 mb-10 tracking-wide"
+            >
+              your space is still here.
+            </motion.p>
 
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.0 }}
-          className="text-sm font-light text-white/35 mb-14 tracking-wide"
-        >
-          a space built around you.
-        </motion.p>
+            {!choosing ? (
+              <>
+                <motion.button
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 1 }}
+                  onClick={() => navigate(`/sanctuary/${suggested}`)}
+                  className="relative px-10 py-3.5 rounded-full border border-white/20 text-white/80 text-sm font-light tracking-widest uppercase hover:border-white/50 hover:text-white transition-all duration-500"
+                  style={{ letterSpacing: '0.15em' }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  return to {SANCTUARY_LABELS[suggested]}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 1.2 }}
+                  onClick={() => setChoosing(true)}
+                  className="mt-5 text-xs font-light text-white/40 hover:text-white/70 tracking-wide transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-sm"
+                >
+                  I need something else today
+                </motion.button>
+              </>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full flex flex-col gap-2 text-left"
+              >
+                {SANCTUARY_TYPES.map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => navigate(`/sanctuary/${type}`)}
+                    className="rounded-2xl px-4 py-3 border border-white/15 text-white/80 hover:border-white/40 hover:bg-white/5 transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                  >
+                    <span className="block text-sm font-light">{SANCTUARY_NEEDS[type]}</span>
+                    <span className="block text-[10px] text-white/35 mt-1 tracking-wide">
+                      {SANCTUARY_LABELS[type]}
+                      {type === suggested ? ' · your suggested space' : ''}
+                    </span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
 
-        <motion.button
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.4 }}
-          onClick={() => navigate('/quiz')}
-          className="relative px-10 py-3.5 rounded-full border border-white/20 text-white/80 text-sm font-light tracking-widest uppercase hover:border-white/50 hover:text-white transition-all duration-500 group"
-          style={{ letterSpacing: '0.15em' }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <span className="relative z-10">Begin</span>
-          <motion.div
-            className="absolute inset-0 rounded-full bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-            style={{ boxShadow: '0 0 30px rgba(255,255,255,0.05)' }}
-          />
-        </motion.button>
+            <motion.button
+              type="button"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 1.5 }}
+              onClick={() => navigate('/quiz')}
+              className="mt-8 text-[11px] font-light text-white/25 hover:text-white/50 tracking-wide transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-sm"
+            >
+              take the questions again
+            </motion.button>
+          </>
+        ) : (
+          <>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+              className="text-lg sm:text-xl font-light tracking-[0.2em] uppercase text-white/60 mb-2"
+              style={{ letterSpacing: '0.25em' }}
+            >
+              find your calm.
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.0 }}
+              className="text-sm font-light text-white/35 mb-14 tracking-wide"
+            >
+              a space built around you.
+            </motion.p>
+            <motion.button
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.4 }}
+              onClick={() => navigate('/quiz')}
+              className="relative px-10 py-3.5 rounded-full border border-white/20 text-white/80 text-sm font-light tracking-widest uppercase hover:border-white/50 hover:text-white transition-all duration-500 group"
+              style={{ letterSpacing: '0.15em' }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span className="relative z-10">Begin</span>
+              <motion.div
+                className="absolute inset-0 rounded-full bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{ boxShadow: '0 0 30px rgba(255,255,255,0.05)' }}
+              />
+            </motion.button>
+          </>
+        )}
 
         <motion.p
           initial={{ opacity: 0 }}

@@ -4,6 +4,7 @@ import SanctuaryHeader from '../../shared/SanctuaryHeader';
 import { getGardenReminder } from '../../../utils/claudeService';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 import { useAiConsent } from '../../../context/AiConsentContext';
+import { clampProgress, progressToStage, readPlantProgress } from '../../../utils/solaceMemory';
 
 interface Stone {
   text: string;
@@ -12,11 +13,9 @@ interface Stone {
 
 type PlantStage = 0 | 1 | 2 | 3 | 4;
 
-const STAGES: PlantStage[] = [0, 1, 2, 3, 4];
 const STAGE_NAMES = ['seed', 'sprout', 'small plant', 'growing', 'full bloom'];
 
 function PlantSVG({ stage, drooping }: { stage: PlantStage; drooping: boolean }) {
-  const transform = drooping ? 'rotate(8, 100, 200)' : '';
   return (
     <motion.svg
       viewBox="0 0 200 260"
@@ -25,9 +24,11 @@ function PlantSVG({ stage, drooping }: { stage: PlantStage; drooping: boolean })
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1 }}
     >
-      {/* Pot */}
+      {/* Pot stays grounded */}
       <path d="M70 230 Q100 255 130 230 L140 200 H60 Z" fill="#8B6914" opacity="0.7" />
       <rect x="58" y="195" width="84" height="12" rx="5" fill="#A07820" opacity="0.6" />
+
+      <g transform={drooping ? 'rotate(6, 100, 195)' : undefined}>
 
       {/* Stem */}
       {stage >= 1 && (
@@ -97,15 +98,19 @@ function PlantSVG({ stage, drooping }: { stage: PlantStage; drooping: boolean })
         <motion.path d="M100 160 Q90 175 85 190" stroke="#A8C5A0" strokeWidth="2" fill="none"
           strokeLinecap="round" opacity="0.5" />
       )}
+      </g>
     </motion.svg>
   );
 }
 
 type BreathPhase = 'idle' | 'in' | 'hold' | 'out';
 
+let gardenVisitAppliedFor = '';
+
 export default function GardenSanctuary() {
   const { preference } = useAiConsent();
   const [stage, setStage] = useLocalStorage<PlantStage>('solace_plant_stage', 0);
+  const [progress, setProgress] = useLocalStorage<number>('solace_plant_progress', readPlantProgress());
   const [visits, setVisits] = useLocalStorage<number>('solace_plant_visits', 0);
   const [firstVisit, setFirstVisit] = useLocalStorage<string>('solace_plant_first_visit', '');
   const [lastVisit, setLastVisit] = useLocalStorage<string>('solace_plant_last_visit', '');
@@ -114,6 +119,8 @@ export default function GardenSanctuary() {
   const [stoneInput, setStoneInput] = useState('');
   const [hoveredStone, setHoveredStone] = useState<number | null>(null);
   const [showPlantTooltip, setShowPlantTooltip] = useState(false);
+  const [softDroop, setSoftDroop] = useState(false);
+  const [keptPlace, setKeptPlace] = useState(false);
 
   // Breathing
   const [breathPhase, setBreathPhase] = useState<BreathPhase>('idle');
@@ -121,24 +128,70 @@ export default function GardenSanctuary() {
   const [dimmed, setDimmed] = useState(false);
   const breathTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const drooping = (() => {
-    if (!lastVisit) return false;
-    const diff = Date.now() - new Date(lastVisit).getTime();
-    return diff > 3 * 24 * 60 * 60 * 1000;
-  })();
+  const displayStage = progressToStage(typeof progress === 'number' ? progress : 0);
+  const safeStones = Array.isArray(stones) ? stones : [];
 
   useEffect(() => {
     const today = new Date().toDateString();
-    if (lastVisit !== today) {
-      setVisits(v => v + 1);
-      setLastVisit(today);
-      if (!firstVisit) setFirstVisit(today);
-      // Advance plant
-      const growthIncrement = 0.25;
-      const newRaw = Math.min(4, stage + growthIncrement);
-      setStage(Math.floor(newRaw) as PlantStage);
+    let previous = typeof lastVisit === 'string' ? lastVisit : '';
+    try {
+      const raw = window.localStorage.getItem('solace_plant_last_visit');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed === 'string') previous = parsed;
+        } catch {
+          previous = raw;
+        }
+      }
+    } catch {
+      // private mode
     }
+
+    let awayMs = 0;
+    if (previous && previous !== today) {
+      const prevTime = new Date(previous).getTime();
+      if (Number.isFinite(prevTime)) awayMs = Date.now() - prevTime;
+    }
+
+    if (awayMs > 3 * 24 * 60 * 60 * 1000) {
+      setSoftDroop(true);
+      setKeptPlace(true);
+    }
+
+    if (previous !== today && gardenVisitAppliedFor !== today) {
+      gardenVisitAppliedFor = today;
+      const current = clampProgress(
+        typeof progress === 'number' ? progress : readPlantProgress(stage)
+      );
+      const next = Math.min(4, current + 0.25);
+      const nextStage = progressToStage(next);
+      const nextVisits = (typeof visits === 'number' && Number.isFinite(visits) && visits >= 0 ? visits : 0) + 1;
+      const nextFirst = !firstVisit || typeof firstVisit !== 'string' ? today : firstVisit;
+      try {
+        window.localStorage.setItem('solace_plant_last_visit', JSON.stringify(today));
+        window.localStorage.setItem('solace_plant_progress', JSON.stringify(next));
+        window.localStorage.setItem('solace_plant_stage', JSON.stringify(nextStage));
+        window.localStorage.setItem('solace_plant_visits', JSON.stringify(nextVisits));
+        window.localStorage.setItem('solace_plant_first_visit', JSON.stringify(nextFirst));
+      } catch {
+        // private mode
+      }
+      setVisits(nextVisits);
+      setLastVisit(today);
+      setFirstVisit(nextFirst);
+      setProgress(next);
+      setStage(nextStage);
+    }
+    // Once per mount/calendar day. Reading lastVisit from storage is the source of truth.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!softDroop) return;
+    const timer = setTimeout(() => setSoftDroop(false), 6000);
+    return () => clearTimeout(timer);
+  }, [softDroop]);
 
   useEffect(() => {
     if (preference !== 'enabled') return;
@@ -150,7 +203,7 @@ export default function GardenSanctuary() {
   const addStone = () => {
     if (!stoneInput.trim()) return;
     const newStone: Stone = { text: stoneInput.trim(), date: new Date().toLocaleDateString() };
-    const updated = [...stones, newStone].slice(-20);
+    const updated = [...safeStones, newStone].slice(-20);
     setStones(updated);
     setStoneInput('');
   };
@@ -213,7 +266,7 @@ export default function GardenSanctuary() {
             onMouseEnter={() => setShowPlantTooltip(true)}
             onMouseLeave={() => setShowPlantTooltip(false)}
           >
-            <PlantSVG stage={stage} drooping={drooping} />
+            <PlantSVG stage={displayStage} drooping={softDroop} />
             <AnimatePresence>
               {showPlantTooltip && (
                 <motion.div
@@ -222,14 +275,15 @@ export default function GardenSanctuary() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                 >
-                  you've visited {visits} time{visits !== 1 ? 's' : ''}. thank you for coming back.
+                  you've visited {typeof visits === 'number' && visits > 0 ? visits : 1} time{(typeof visits === 'number' && visits === 1) ? '' : 's'}. thank you for coming back.
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
           <p className="text-[#8B6914]/50 text-xs tracking-wide text-center">
-            {stage < 4 ? STAGE_NAMES[stage] : 'full bloom'}
-            {firstVisit && <span className="block mt-1">growing since {firstVisit}</span>}
+            {STAGE_NAMES[displayStage]}
+            {keptPlace && <span className="block mt-1">the garden kept your place.</span>}
+            {typeof firstVisit === 'string' && firstVisit && <span className="block mt-1">growing since {firstVisit}</span>}
           </p>
 
           {/* Breathing circle */}
@@ -299,12 +353,12 @@ export default function GardenSanctuary() {
           </div>
 
           {/* Stones path */}
-          {stones.length > 0 && (
+          {safeStones.length > 0 && (
             <div className="bg-white/30 rounded-2xl p-5">
               <p className="text-[#8B6914]/50 text-xs tracking-widest uppercase mb-4">your path</p>
               <div className="flex flex-wrap gap-2">
-                {stones.map((stone, i) => {
-                  const opacity = stones.length > 15 && i < stones.length - 15 ? 0.35 : 1;
+                {safeStones.map((stone, i) => {
+                  const opacity = safeStones.length > 15 && i < safeStones.length - 15 ? 0.35 : 1;
                   return (
                     <div
                       key={i}

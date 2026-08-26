@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import QuizQuestion from '../components/Quiz/QuizQuestion';
 import QuizProgress from '../components/Quiz/QuizProgress';
 import { calculateSanctuary } from '../utils/scoringAlgorithm';
+import { saveQuizWeatherFromAnswers, saveSuggestedSanctuary } from '../utils/solaceMemory';
 
 const questions = [
   {
@@ -114,7 +115,8 @@ export default function Quiz() {
         setSanctuary(result);
         setCompleting(true);
         setTimeout(() => {
-          localStorage.setItem('solace_sanctuary_type', result);
+          saveSuggestedSanctuary(result);
+          saveQuizWeatherFromAnswers(newAnswers);
           navigate(`/sanctuary/${result}`);
         }, 2800);
       }
@@ -156,7 +158,7 @@ export default function Quiz() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.8 }}
             >
-              we found your space.
+              this might feel right today.
             </motion.p>
           </motion.div>
         )}

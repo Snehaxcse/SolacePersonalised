@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DoorOpen } from 'lucide-react';
 import { useAiConsent } from '../../context/AiConsentContext';
 import SupportDialog from './SupportDialog';
+import SanctuarySwitcher from './SanctuarySwitcher';
+import { isSanctuaryType, readSuggestedSanctuary } from '../../utils/solaceMemory';
 
 interface Props {
   sanctuaryName: string;
@@ -12,8 +14,13 @@ interface Props {
 
 export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-current' }: Props) {
   const navigate = useNavigate();
+  const { type } = useParams<{ type: string }>();
   const { preference, openSettings } = useAiConsent();
   const [supportOpen, setSupportOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  const current = isSanctuaryType(type) ? type : null;
+  const suggested = readSuggestedSanctuary();
 
   const aiLabel = preference === 'enabled'
     ? 'AI features are on. Open AI settings.'
@@ -29,7 +36,14 @@ export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-curre
         transition={{ duration: 0.6 }}
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4"
       >
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setSwitcherOpen(true)}
+          className="flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-sm"
+          aria-label="Choose another space"
+          aria-haspopup="dialog"
+          aria-expanded={switcherOpen}
+        >
           <span className={`font-serif text-base font-light ${textColor} opacity-90`} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
             Solace
           </span>
@@ -37,7 +51,7 @@ export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-curre
           <span className={`text-xs font-light ${textColor} opacity-60 tracking-widest uppercase`}>
             {sanctuaryName}
           </span>
-        </div>
+        </button>
         <div className="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
@@ -65,11 +79,21 @@ export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-curre
             aria-label="return home"
           >
             <DoorOpen size={14} />
-            <span className="hidden sm:inline">leave</span>
+            <span className="hidden sm:inline">home</span>
           </button>
         </div>
       </motion.header>
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
+      <SanctuarySwitcher
+        open={switcherOpen}
+        current={current}
+        suggested={suggested}
+        onClose={() => setSwitcherOpen(false)}
+        onSelect={next => {
+          setSwitcherOpen(false);
+          if (next !== current) navigate(`/sanctuary/${next}`);
+        }}
+      />
     </>
   );
 }
