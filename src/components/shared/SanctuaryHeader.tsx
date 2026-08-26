@@ -5,14 +5,15 @@ import { DoorOpen } from 'lucide-react';
 import { useAiConsent } from '../../context/AiConsentContext';
 import SupportDialog from './SupportDialog';
 import SanctuarySwitcher from './SanctuarySwitcher';
-import { isSanctuaryType, readSuggestedSanctuary } from '../../utils/solaceMemory';
+import { readSuggestedSanctuary } from '../../utils/solaceMemory';
+import { SANCTUARIES, isSanctuaryType, type SanctuaryType } from '../../utils/sanctuaries';
 
 interface Props {
-  sanctuaryName: string;
+  sanctuary: SanctuaryType;
   textColor?: string;
 }
 
-export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-current' }: Props) {
+export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' }: Props) {
   const navigate = useNavigate();
   const { type } = useParams<{ type: string }>();
   const { preference, openSettings } = useAiConsent();
@@ -49,7 +50,7 @@ export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-curre
           </span>
           <span className={`${textColor} opacity-40`}>/</span>
           <span className={`text-xs font-light ${textColor} opacity-60 tracking-widest uppercase`}>
-            {sanctuaryName}
+            {SANCTUARIES[sanctuary].label}
           </span>
         </button>
         <div className="flex items-center gap-3 sm:gap-4">
@@ -91,7 +92,7 @@ export default function SanctuaryHeader({ sanctuaryName, textColor = 'text-curre
         onClose={() => setSwitcherOpen(false)}
         onSelect={next => {
           setSwitcherOpen(false);
-          if (next !== current) navigate(`/sanctuary/${next}`);
+          if (next !== current) navigate(SANCTUARIES[next].route);
         }}
       />
     </>

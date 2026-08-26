@@ -1,3 +1,5 @@
+import type { SanctuaryType } from './sanctuaries';
+
 // Scoring map for each question
 // Each entry: [questionIndex, answerIndex] → { sanctuary: score }
 type SanctuaryKey = 'STUDIO' | 'LIBRARY' | 'GARDEN' | 'ARCADE';
@@ -57,7 +59,7 @@ const SCORE_MAP: ScoreMap = {
   'q7_a3': { GARDEN: 3, LIBRARY: 1 },       // Exist
 };
 
-export type SanctuaryType = 'studio' | 'library' | 'garden' | 'arcade';
+export type { SanctuaryType };
 
 export function calculateSanctuary(answers: (number | null)[]): SanctuaryType {
   const scores: { [k in SanctuaryKey]: number } = { STUDIO: 0, LIBRARY: 0, GARDEN: 0, ARCADE: 0 };

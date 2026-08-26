@@ -5,7 +5,7 @@ import {
   SANCTUARY_NEEDS,
   SANCTUARY_TYPES,
   type SanctuaryType,
-} from '../../utils/solaceMemory';
+} from '../../utils/sanctuaries';
 
 interface Props {
   open: boolean;

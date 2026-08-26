@@ -5,10 +5,11 @@ import { getLibraryReadingNook, getJournalReflection, getWordOfDay } from '../..
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 import { useAiConsent } from '../../../context/AiConsentContext';
 import { readQuizWeather } from '../../../utils/solaceMemory';
+import { useBreathingPattern, type BreathPhaseConfig } from '../../../hooks/useBreathingPattern';
 
 type Tab = 'nook' | 'journal' | 'breathe' | 'word';
 
-const BREATHING_PHASES = [
+const LIBRARY_BREATH: readonly BreathPhaseConfig[] = [
   { label: 'breathe in', duration: 4000, action: 'in' },
   { label: 'hold', duration: 7000, action: 'hold' },
   { label: 'let go', duration: 8000, action: 'out' },
@@ -32,11 +33,14 @@ export default function LibrarySanctuary() {
   // Word of day
   const [wordData, setWordData] = useLocalStorage<{ word: string; explanation: string; date: string } | null>('solace_word_of_day', null);
 
-  // Breathing
-  const [breathPhase, setBreathPhase] = useState(0);
-  const [breathActive, setBreathActive] = useState(false);
-  const [breathCycles, setBreathCycles] = useState(0);
-  const breathTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const {
+    active: breathActive,
+    phaseIndex: breathPhase,
+    phase: currentBreath,
+    cycles: breathCycles,
+    start: startBreathe,
+    stop: stopBreathe,
+  } = useBreathingPattern({ phases: LIBRARY_BREATH });
 
   const loadNook = useCallback(async () => {
     setNookLoading(true);
@@ -54,6 +58,8 @@ export default function LibrarySanctuary() {
     if (!wordData || wordData.date !== today) {
       getWordOfDay().then(data => setWordData({ ...data, date: today }));
     }
+    // Word of day is fetched once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleJournalChange = (val: string) => {
@@ -75,34 +81,9 @@ export default function LibrarySanctuary() {
     await loadNook();
   };
 
-  // Breathing timer
-  useEffect(() => {
-    if (!breathActive) return;
-    const phase = BREATHING_PHASES[breathPhase];
-    breathTimer.current = setTimeout(() => {
-      const next = (breathPhase + 1) % BREATHING_PHASES.length;
-      setBreathPhase(next);
-      if (next === 0) setBreathCycles(c => c + 1);
-    }, phase.duration);
-    return () => { if (breathTimer.current) clearTimeout(breathTimer.current); };
-  }, [breathActive, breathPhase]);
-
-  const startBreathe = () => {
-    setBreathActive(true);
-    setBreathPhase(0);
-    setBreathCycles(0);
-  };
-  const stopBreathe = () => {
-    setBreathActive(false);
-    if (breathTimer.current) clearTimeout(breathTimer.current);
-  };
-
-  const currentBreath = BREATHING_PHASES[breathPhase];
-  const breathProgress = breathActive ? 1 : 0;
-
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col" style={{ backgroundColor: '#1A1F3A' }}>
-      <SanctuaryHeader sanctuaryName="the library" textColor="text-[#F5F0E8]" />
+      <SanctuaryHeader sanctuary="library" textColor="text-[#F5F0E8]" />
 
       {/* Nav tabs */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2 bg-[#2D3561]/80 backdrop-blur-md rounded-full px-3 py-2">

@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SanctuaryHeader from '../../shared/SanctuaryHeader';
 import { getGardenReminder } from '../../../utils/claudeService';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 import { useAiConsent } from '../../../context/AiConsentContext';
 import { clampProgress, progressToStage, readPlantProgress } from '../../../utils/solaceMemory';
+import { useBreathingPattern, type BreathPhaseConfig } from '../../../hooks/useBreathingPattern';
 
 interface Stone {
   text: string;
@@ -14,6 +15,12 @@ interface Stone {
 type PlantStage = 0 | 1 | 2 | 3 | 4;
 
 const STAGE_NAMES = ['seed', 'sprout', 'small plant', 'growing', 'full bloom'];
+
+const GARDEN_BREATH: readonly BreathPhaseConfig[] = [
+  { label: 'breathe in', duration: 4000, action: 'in' },
+  { label: 'hold', duration: 4000, action: 'hold' },
+  { label: 'breathe out', duration: 6000, action: 'out' },
+];
 
 function PlantSVG({ stage, drooping }: { stage: PlantStage; drooping: boolean }) {
   return (
@@ -103,8 +110,6 @@ function PlantSVG({ stage, drooping }: { stage: PlantStage; drooping: boolean })
   );
 }
 
-type BreathPhase = 'idle' | 'in' | 'hold' | 'out';
-
 let gardenVisitAppliedFor = '';
 
 export default function GardenSanctuary() {
@@ -121,12 +126,34 @@ export default function GardenSanctuary() {
   const [showPlantTooltip, setShowPlantTooltip] = useState(false);
   const [softDroop, setSoftDroop] = useState(false);
   const [keptPlace, setKeptPlace] = useState(false);
-
-  // Breathing
-  const [breathPhase, setBreathPhase] = useState<BreathPhase>('idle');
-  const [breathCycles, setBreathCycles] = useState(0);
   const [dimmed, setDimmed] = useState(false);
-  const breathTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const onCycleComplete = useCallback((n: number) => {
+    if (n >= 3) {
+      setDimmed(true);
+      setTimeout(() => setDimmed(false), 5000);
+    }
+  }, []);
+
+  const {
+    active: breathActive,
+    phase,
+    cycles: breathCycles,
+    start: startBreath,
+    stop: stopBreathPattern,
+  } = useBreathingPattern({ phases: GARDEN_BREATH, onCycleComplete });
+
+  const breathPhase = breathActive ? phase.action : 'idle';
+
+  const startBreathing = () => {
+    setDimmed(false);
+    startBreath();
+  };
+
+  const stopBreath = () => {
+    stopBreathPattern();
+    setDimmed(false);
+  };
 
   const displayStage = progressToStage(typeof progress === 'number' ? progress : 0);
   const safeStones = Array.isArray(stones) ? stones : [];
@@ -198,6 +225,8 @@ export default function GardenSanctuary() {
     if (!reminder) {
       getGardenReminder().then(r => setReminder(r));
     }
+    // Ambient reminder is fetched once when AI is enabled.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preference]);
 
   const addStone = () => {
@@ -207,43 +236,6 @@ export default function GardenSanctuary() {
     setStones(updated);
     setStoneInput('');
   };
-
-  const runBreath = useCallback((phase: BreathPhase, cycles: number) => {
-    const durations: { [k in BreathPhase]: number } = { idle: 0, in: 4000, hold: 4000, out: 6000 };
-    if (phase === 'idle') return;
-    breathTimer.current = setTimeout(() => {
-      let next: BreathPhase;
-      let nextCycles = cycles;
-      if (phase === 'in') next = 'hold';
-      else if (phase === 'hold') next = 'out';
-      else {
-        next = 'in';
-        nextCycles = cycles + 1;
-        setBreathCycles(nextCycles);
-        if (nextCycles >= 3) {
-          setDimmed(true);
-          setTimeout(() => setDimmed(false), 5000);
-        }
-      }
-      setBreathPhase(next);
-      runBreath(next, nextCycles);
-    }, durations[phase]);
-  }, []);
-
-  const startBreath = () => {
-    setBreathPhase('in');
-    setBreathCycles(0);
-    setDimmed(false);
-    runBreath('in', 0);
-  };
-
-  const stopBreath = () => {
-    setBreathPhase('idle');
-    if (breathTimer.current) clearTimeout(breathTimer.current);
-    setDimmed(false);
-  };
-
-  useEffect(() => () => { if (breathTimer.current) clearTimeout(breathTimer.current); }, []);
 
   const circleScale = breathPhase === 'in' ? 1.4 : breathPhase === 'out' ? 0.9 : breathPhase === 'hold' ? 1.4 : 1;
   const breathLabel = breathPhase === 'in' ? 'breathe in' : breathPhase === 'hold' ? 'hold' : breathPhase === 'out' ? 'breathe out' : '';
@@ -255,7 +247,7 @@ export default function GardenSanctuary() {
       animate={{ opacity: dimmed ? 0.6 : 1 }}
       transition={{ duration: 2 }}
     >
-      <SanctuaryHeader sanctuaryName="the garden" textColor="text-[#5C8A5E]" />
+      <SanctuaryHeader sanctuary="garden" textColor="text-[#5C8A5E]" />
 
       <div className="flex-1 pt-20 pb-8 px-4 sm:px-8 flex flex-col lg:flex-row gap-8 max-w-5xl mx-auto w-full">
         {/* Left: Plant + Breathing */}
@@ -316,7 +308,7 @@ export default function GardenSanctuary() {
             </div>
 
             {breathPhase === 'idle' ? (
-              <button onClick={startBreath} className="text-[#5C8A5E]/60 hover:text-[#5C8A5E] text-xs tracking-widest uppercase transition-colors duration-300 border border-[#5C8A5E]/20 rounded-full px-6 py-2">
+              <button onClick={startBreathing} className="text-[#5C8A5E]/60 hover:text-[#5C8A5E] text-xs tracking-widest uppercase transition-colors duration-300 border border-[#5C8A5E]/20 rounded-full px-6 py-2">
                 breathe
               </button>
             ) : (

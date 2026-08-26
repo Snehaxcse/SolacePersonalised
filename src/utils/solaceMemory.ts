@@ -1,32 +1,20 @@
-import { getWeatherFromAnswer, type SanctuaryType } from './scoringAlgorithm';
+import { getWeatherFromAnswer } from './scoringAlgorithm';
+import { isSanctuaryType, type SanctuaryType } from './sanctuaries';
 
 export type { SanctuaryType };
+export {
+  SANCTUARY_LABELS,
+  SANCTUARY_NEEDS,
+  SANCTUARY_TYPES,
+  isSanctuaryType,
+  sanctuaryRoute,
+} from './sanctuaries';
 
 export const SUGGESTED_SANCTUARY_KEY = 'solace_sanctuary_type';
 export const QUIZ_WEATHER_KEY = 'solace_quiz_weather';
 export const PLANT_PROGRESS_KEY = 'solace_plant_progress';
 
-export const SANCTUARY_TYPES: SanctuaryType[] = ['studio', 'library', 'garden', 'arcade'];
-
-export const SANCTUARY_LABELS: Record<SanctuaryType, string> = {
-  studio: 'the studio',
-  library: 'the library',
-  garden: 'the garden',
-  arcade: 'the arcade',
-};
-
-export const SANCTUARY_NEEDS: Record<SanctuaryType, string> = {
-  studio: 'I need to let something out.',
-  library: 'I need somewhere quiet.',
-  garden: 'I need to slow down.',
-  arcade: 'I need my mind somewhere else.',
-};
-
 const WEATHERS = new Set(['stormy', 'cloudy', 'partly sunny', 'clear']);
-
-export function isSanctuaryType(value: unknown): value is SanctuaryType {
-  return value === 'studio' || value === 'library' || value === 'garden' || value === 'arcade';
-}
 
 function readStorage(key: string): string | null {
   try {

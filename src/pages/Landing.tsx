@@ -1,13 +1,14 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { readSuggestedSanctuary } from '../utils/solaceMemory';
 import {
   SANCTUARY_LABELS,
   SANCTUARY_NEEDS,
   SANCTUARY_TYPES,
-  readSuggestedSanctuary,
+  sanctuaryRoute,
   type SanctuaryType,
-} from '../utils/solaceMemory';
+} from '../utils/sanctuaries';
 
 const gradientColors = [
   ['#C4622D', '#1A1F3A'],
@@ -88,7 +89,7 @@ export default function Landing() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 1 }}
-                  onClick={() => navigate(`/sanctuary/${suggested}`)}
+                  onClick={() => navigate(sanctuaryRoute(suggested))}
                   className="relative px-10 py-3.5 rounded-full border border-white/20 text-white/80 text-sm font-light tracking-widest uppercase hover:border-white/50 hover:text-white transition-all duration-500"
                   style={{ letterSpacing: '0.15em' }}
                   whileHover={{ scale: 1.02 }}
@@ -117,7 +118,7 @@ export default function Landing() {
                   <button
                     key={type}
                     type="button"
-                    onClick={() => navigate(`/sanctuary/${type}`)}
+                    onClick={() => navigate(sanctuaryRoute(type))}
                     className="rounded-2xl px-4 py-3 border border-white/15 text-white/80 hover:border-white/40 hover:bg-white/5 transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                   >
                     <span className="block text-sm font-light">{SANCTUARY_NEEDS[type]}</span>
