@@ -4,49 +4,88 @@ A private space with four rooms and an optional companion.
 
 Not therapy. Not a diagnosis. Just a place that can feel like yours.
 
-## What Solace is
+**Status:** production-ready static SPA + one Netlify Function. No live URL in this repository yet.
 
-Solace is a quiet web app for sitting with how you feel. A short set of questions can suggest a room. You can also choose for yourself, return later, or sit with Solace Companion.
+**Live demo:** _add the Netlify URL here after first deploy._
 
-Nothing here is medical care. Nothing here tries to score, diagnose, or fix you.
+Solace does not score you, label a personality, or try to fix you. A short set of questions can suggest a room for today. You can ignore the suggestion. You can return later. Persistence stays on this device unless you opt into AI.
 
-## Philosophy
+## What makes it different
 
-- The rooms have different personalities. They are not one generic wellness product.
-- Persistence stays on this device unless you choose an optional AI feature.
-- AI is opt-in, named, and easy to turn off.
-- Copy stays plain. It does not pretend to be a clinician.
+- Four need-based rooms, not a diagnosis or a fifth “catch-all”
+- Local-first storage; AI is named, optional, and server-proxied
+- Companion is an AI conversation that does not pretend to be human, therapy, or emergency care
+- Accessibility (keyboard, reduced motion, focus traps) is treated as part of emotional safety
+- Features were removed on purpose: no accounts, no streaks-as-worth, no long-term AI memory
 
-## Core experiences
+## The four sanctuaries
 
-Four sanctuaries, and no fifth:
+| Room | When you need |
+| --- | --- |
+| **Studio** | to let something out — draw, sit with it, keep it or let it go |
+| **Library** | somewhere quiet — private journal, a page to read, optional breathing |
+| **Garden** | to slow down — return, notice, leave something small |
+| **Arcade** | your mind somewhere else — three untimed activities |
 
-- **Studio** — draw, sit with it, keep it or let it go.
-- **Library** — a private journal, a quiet page to read, optional breathing.
-- **Garden** — return, notice, leave something small. The plant grows slowly. It does not die.
-- **Arcade** — three untimed activities when your mind needs somewhere else to go.
-
-You can switch rooms from the header. Home is always available. Returning visitors are not auto-redirected.
+Returning visitors are not auto-redirected. Home stays home.
 
 ## Solace Companion
 
-Companion is a dedicated AI conversation at `/companion`. It is session-only. You can hold something on this device without sending it. Four modes are available; the safety architecture stays on the server.
+A dedicated route at `/companion`. Session-only chat. Four modes. You can **Just hold this** on the device without sending it to AI.
 
-Companion is not therapy, not a diagnosis, and not emergency care.
+It stays with you. It does not try to fix you. It is not a therapist, not a person, and not emergency care.
 
-## Privacy and safety
+## Privacy-first architecture
 
-- Journal pages, drawings, garden notes, and quiz memory live in `localStorage` on this device.
-- Companion “Just hold this” notes live in `sessionStorage` for this visit only.
-- Enabling AI sends the relevant input for that feature through Solace’s Netlify function. The Anthropic key never ships in the browser bundle.
-- Support links are available from the header. Solace does not provide crisis intervention.
+- Journal, gallery, garden notes, and quiz memory: `localStorage` on this device
+- Held Companion notes: `sessionStorage` for this visit only
+- Sanctuary content is not auto-sent to Companion; Studio drawings are not auto-analyzed
+- `ANTHROPIC_API_KEY` lives only in the Netlify Function environment — never in the browser bundle, never as `VITE_*`
 
 ## Tech stack
 
-- Vite, React 18, TypeScript
-- Tailwind CSS, Framer Motion, React Router
-- Netlify Functions (Anthropic Messages API proxy)
-- Vitest for a small unit suite
+Vite · React 18 · TypeScript · Tailwind CSS · Framer Motion · React Router · Netlify Functions · Vitest
+
+## Screenshots
+
+Add stills to `docs/screenshots/` when you capture them. Use mock writing only — never real journal or Companion text.
+
+| File | Scene |
+| --- | --- |
+| `01-landing.png` | First visit, Begin + Companion |
+| `02-returning.png` | Welcome back, suggested room |
+| `03-studio.png` | Empty canvas and tools |
+| `04-studio-ritual.png` | Keep / let go / sit with it |
+| `05-library.png` | Journal list, “kept on this device” |
+| `06-garden.png` | Mid-growth plant, leave-something |
+| `07-arcade.png` | Three activity choices |
+| `08-companion-modes.png` | Mode selection, AI identity visible |
+| `09-companion-talk.png` | One short mock exchange |
+| `10-mobile.png` | Header + room at 375px |
+
+## Architecture
+
+```
+src/pages                 Landing, quiz, companion, sanctuary router
+src/components            Four rooms, Companion, shared chrome
+src/utils                 Scoring, journal store, sanctuary metadata, AI clients
+netlify/functions         claude.ts — allowlisted Anthropic proxy
+src/utils/sanctuaries.ts  Source of truth for room ids, labels, needs, routes
+```
+
+Client AI calls `/.netlify/functions/claude`. Companion replies are JSON. Sanctuary AI falls back to local copy if the proxy is unavailable.
+
+## Accessibility
+
+Skip link, visible focus, dialog focus traps, Escape to close, keyboard quiz (no auto-advance), roving library tabs, `prefers-reduced-motion` via Framer `MotionConfig` and custom animation.
+
+## Testing
+
+```bash
+npm test
+```
+
+Vitest smoke tests for sanctuary scoring, journal migration, garden progress helpers, sanctuary metadata, and Companion payload parsing.
 
 ## Local setup
 
@@ -55,7 +94,7 @@ npm install
 npm run dev
 ```
 
-Open the local Vite URL. The app works without an API key. Optional AI features stay off until you enable them and a key is configured for the function.
+The app works without an API key. Optional AI stays off until you enable it and configure the function.
 
 ```bash
 npm run build
@@ -64,74 +103,36 @@ npm run lint
 npm test
 ```
 
-## Environment variables
+## Environment
 
-Copy `.env.example` to `.env` if you want local AI through Netlify Dev:
+For local functions (`npx netlify dev`), copy `.env.example` to `.env`:
 
 ```
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ```
 
-This variable is **server-only**. Do not prefix it with `VITE_`. Do not commit `.env`.
+Server-only. Do not prefix with `VITE_`. Do not commit `.env`.
 
-## Netlify deployment
+## Netlify
 
-- Build command: `npm run build`
-- Publish directory: `dist`
-- Functions directory: `netlify/functions`
-- SPA fallback: `/*` → `/index.html` (`force = false` so `/.netlify/functions/claude` is not rewritten)
-- Set `ANTHROPIC_API_KEY` in the Netlify site environment
-- Security headers and CSP are defined in `netlify.toml`
+`netlify.toml` already sets:
 
-For local functions: `npx netlify dev` (uses the `[dev]` block in `netlify.toml`).
+- Build: `npm run build`
+- Publish: `dist`
+- Functions: `netlify/functions`
+- Function `claude` timeout: 26s
+- SPA fallback: `/*` → `/index.html` (`force = false`)
+- Security headers + CSP
 
-## Accessibility
+**Deploy**
 
-- Skip link, visible focus, dialog focus traps, Escape to close
-- Sanctuary switcher and library tabs are keyboard reachable
-- Quiz does not auto-advance; Next is explicit
-- `prefers-reduced-motion` is respected in Framer Motion and custom animation
-- Companion identity, consent, and privacy lines stay visible
+1. Push this repo to GitHub.
+2. New Netlify site from that repo. Build settings come from `netlify.toml`.
+3. Site settings → Environment variables → `ANTHROPIC_API_KEY` (production, and preview if you want AI there). Never commit the real key.
+4. Deploy. Confirm `https://YOUR-SITE/quiz`, `/companion`, and `/sanctuary/garden` still work after a refresh.
+5. When the URL is stable, set canonical + `og:url` and make `og:image` an absolute URL to `/og.png` (see comments in `index.html`).
 
-## Architecture overview
-
-```
-src/pages              Landing, quiz, companion, sanctuary router
-src/components         Four sanctuaries, Companion, shared chrome
-src/utils              Scoring, journal store, sanctuary metadata, AI clients
-netlify/functions      claude.ts — consent-gated Anthropic proxy
-```
-
-`src/utils/sanctuaries.ts` is the source of truth for room ids, labels, needs, and routes.
-
-Client AI calls go to `/.netlify/functions/claude`. Companion replies are JSON. Sanctuary AI helpers fall back to local copy if the proxy is unavailable.
-
-## Screenshots
-
-Add stills here when they are ready:
-
-- Landing — first visit
-- Landing — returning visit
-- Studio
-- Library
-- Garden
-- Arcade
-- Companion
-
-## Roadmap / future ideas
-
-Intentionally not in this release:
-
-- A fifth sanctuary
-- Accounts, cloud sync, or social features
-- Long-term AI memory
-- Product analytics beyond what the host already provides
-
-Possible later polish:
-
-- A dedicated Open Graph image and real screenshots
-- Canonical URL after a public deploy
-- A PNG home-screen icon
+Open Graph image: `public/og.png` (1200×630). Relative `/og.png` is wired now; some crawlers want the absolute URL after deploy.
 
 ## Disclaimer
 
