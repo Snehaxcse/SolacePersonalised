@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { RotateCcw, Save, Play, Image, Feather, ChevronRight, ChevronLeft } from 'lucide-react';
+import { RotateCcw, Save, Play, Image, Feather } from 'lucide-react';
 import { ArtistPalette, MoodPalette, TexturePalette } from './StudioPalette';
 import type { BgTexture, BrushType } from './studioTypes';
 
@@ -29,8 +29,6 @@ interface Props {
   onOpenGallery: () => void;
   whisperMode: boolean;
   onToggleWhisper: () => void;
-  convoOpen: boolean;
-  onToggleConvo: () => void;
 }
 
 export default function StudioToolbar(props: Props) {
@@ -39,7 +37,6 @@ export default function StudioToolbar(props: Props) {
     historyLen, onUndo, canvasBg, onCanvasBg, bgTexture, onBgTexture,
     releasing, onLetItGo, onFinish, aiActionLoading, onAskSolace, onAddSomething,
     onSave, replaying, onReplay, onOpenGallery, whisperMode, onToggleWhisper,
-    convoOpen, onToggleConvo,
   } = props;
 
   return (
@@ -178,16 +175,6 @@ export default function StudioToolbar(props: Props) {
           }`}
         >
           <Feather size={13} aria-hidden="true" />
-        </button>
-
-        <button
-          type="button"
-          onClick={onToggleConvo}
-          aria-label={convoOpen ? 'close companion' : 'open companion'}
-          aria-expanded={convoOpen}
-          className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 shadow-sm flex items-center justify-center text-[#6B4226] hover:text-[#C4622D] transition-colors duration-300"
-        >
-          {convoOpen ? <ChevronRight size={13} aria-hidden="true" /> : <ChevronLeft size={13} aria-hidden="true" />}
         </button>
       </motion.div>
     </>

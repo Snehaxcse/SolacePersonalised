@@ -12,16 +12,18 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+export type GallerySaveResult = 'kept' | 'full' | 'quota';
+
 export function useStudioGallery() {
   const [gallery, setGallery] = useLocalStorage<GalleryEntry[]>('solace_studio_gallery', []);
   const [showGallery, setShowGallery] = useState(false);
-  const [galleryFull, setGalleryFull] = useState(false);
+  const [galleryNotice, setGalleryNotice] = useState<'full' | 'quota' | null>(null);
 
-  const saveDrawing = (canvas: HTMLCanvasElement | null, moodColor: string | null) => {
-    if (!canvas) return false;
+  const saveDrawing = (canvas: HTMLCanvasElement | null, moodColor: string | null): GallerySaveResult => {
+    if (!canvas) return 'quota';
     if (gallery.length >= MAX_GALLERY) {
-      setGalleryFull(true);
-      return false;
+      setGalleryNotice('full');
+      return 'full';
     }
 
     const now = new Date();
@@ -34,12 +36,20 @@ export function useStudioGallery() {
       a.download = filename;
       a.click();
     } catch {
-      // download is optional; gallery save can still proceed
+      // download is optional; local keep can still be attempted
+    }
+
+    let dataURL: string;
+    try {
+      dataURL = canvasToGalleryDataURL(canvas, moodColor ?? '#F5ECD7');
+    } catch {
+      setGalleryNotice('quota');
+      return 'quota';
     }
 
     const entry: GalleryEntry = {
       id: `${Date.now()}`,
-      dataURL: canvasToGalleryDataURL(canvas, moodColor ?? '#F5ECD7'),
+      dataURL,
       date: now.toLocaleDateString(),
       moodColor,
     };
@@ -47,14 +57,14 @@ export function useStudioGallery() {
     try {
       window.localStorage.setItem('solace_studio_gallery', JSON.stringify(next));
     } catch {
-      setGalleryFull(true);
-      return false;
+      setGalleryNotice('quota');
+      return 'quota';
     }
     setGallery(next);
-    return true;
+    return 'kept';
   };
 
-  return { gallery, setGallery, showGallery, setShowGallery, galleryFull, setGalleryFull, saveDrawing };
+  return { gallery, setGallery, showGallery, setShowGallery, galleryNotice, setGalleryNotice, saveDrawing };
 }
 
 export default function StudioGallery({
@@ -62,13 +72,13 @@ export default function StudioGallery({
   onOpenChange,
   gallery,
   onGalleryChange,
-  galleryFull,
-  onGalleryFullChange,
+  galleryNotice,
+  onGalleryNoticeChange,
 }: Props & {
   gallery: GalleryEntry[];
   onGalleryChange: (value: GalleryEntry[] | ((prev: GalleryEntry[]) => GalleryEntry[])) => void;
-  galleryFull: boolean;
-  onGalleryFullChange: (full: boolean) => void;
+  galleryNotice: 'full' | 'quota' | null;
+  onGalleryNoticeChange: (notice: 'full' | 'quota' | null) => void;
 }) {
   const [expandedImage, setExpandedImage] = useState<GalleryEntry | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -88,14 +98,18 @@ export default function StudioGallery({
   return (
     <>
       <AnimatePresence>
-        {galleryFull && (
+        {galleryNotice && (
           <motion.div
             role="status"
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-md max-w-xs text-center"
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
           >
-            <p className="text-[#6B4226] text-xs font-light mb-2">your gallery is full. remove a piece if you want to keep another.</p>
-            <button type="button" onClick={() => { onGalleryFullChange(false); onOpenChange(true); }} className="text-[#C4622D] text-xs underline">open gallery</button>
+            <p className="text-[#6B4226] text-xs font-light mb-2 leading-5">
+              {galleryNotice === 'quota'
+                ? 'this piece could not be kept on this device. nothing already saved was removed. a download may still have started.'
+                : 'this device cannot hold another piece here. nothing already saved was removed.'}
+            </p>
+            <button type="button" onClick={() => { onGalleryNoticeChange(null); onOpenChange(true); }} className="text-[#C4622D] text-xs underline">open gallery</button>
           </motion.div>
         )}
       </AnimatePresence>

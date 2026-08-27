@@ -2,8 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import SanctuaryHeader from '../../shared/SanctuaryHeader';
-import { getLibraryReadingNook, getJournalReflection, getWordOfDay } from '../../../utils/claudeService';
-import { useLocalStorage } from '../../../hooks/useLocalStorage';
+import { getLibraryReadingNook, getJournalReflection } from '../../../utils/claudeService';
 import { useAiConsent } from '../../../context/AiConsentContext';
 import { readQuizWeather } from '../../../utils/solaceMemory';
 import { useBreathingPattern, type BreathPhaseConfig } from '../../../hooks/useBreathingPattern';
@@ -18,14 +17,13 @@ import {
   type JournalEntry,
 } from '../../../utils/journalStore';
 
-const TABS = ['journal', 'nook', 'breathe', 'word'] as const;
+const TABS = ['journal', 'nook', 'breathe'] as const;
 type Tab = (typeof TABS)[number];
 
 const TAB_LABELS: Record<Tab, string> = {
   journal: 'journal',
   nook: 'reading',
   breathe: 'breathe',
-  word: 'word',
 };
 
 const LIBRARY_BREATH: readonly BreathPhaseConfig[] = [
@@ -62,8 +60,6 @@ export default function LibrarySanctuary() {
   draftRef.current = draft;
   const activeIdRef = useRef(activeId);
   activeIdRef.current = activeId;
-
-  const [wordData, setWordData] = useLocalStorage<{ word: string; explanation: string; date: string } | null>('solace_word_of_day', null);
 
   const {
     active: breathActive,
@@ -176,14 +172,6 @@ export default function LibrarySanctuary() {
   useEffect(() => {
     if (tab === 'nook' && !nook) loadNook();
   }, [tab, nook, loadNook]);
-
-  useEffect(() => {
-    if (tab !== 'word') return;
-    const today = new Date().toDateString();
-    if (!wordData || wordData.date !== today) {
-      getWordOfDay().then(data => setWordData({ ...data, date: today }));
-    }
-  }, [tab, wordData, setWordData]);
 
   const handleReflect = async () => {
     const text = draft.trim();
@@ -475,38 +463,6 @@ export default function LibrarySanctuary() {
                 >
                   pause
                 </button>
-              )}
-            </motion.div>
-          )}
-
-          {tab === 'word' && (
-            <motion.div
-              key="word"
-              id="library-panel-word"
-              role="tabpanel"
-              aria-labelledby="library-tab-word"
-              {...panelMotion}
-              className="flex flex-col items-center pt-12"
-            >
-              <h1 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-4">a word</h1>
-              <p className="text-[#F5F0E8]/60 text-xs font-light mb-10">only if you want one.</p>
-              {wordData ? (
-                <div className="text-center bg-[#2D3561]/60 rounded-3xl px-10 py-10 max-w-sm">
-                  <p
-                    className="text-[#C9A84C] font-light mb-5 tracking-widest"
-                    style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontSize: '3.5rem', lineHeight: 1 }}
-                  >
-                    {wordData.word}
-                  </p>
-                  <p
-                    className="text-[#F5F0E8]/80 text-sm font-light leading-7 italic"
-                    style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-                  >
-                    {wordData.explanation}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-[#F5F0E8]/75 text-sm italic">looking for a word...</p>
               )}
             </motion.div>
           )}

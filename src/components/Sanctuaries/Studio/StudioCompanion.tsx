@@ -1,3 +1,4 @@
+/** Kept for compatibility. Hidden from Studio in Phase 4B; /companion is the conversation surface. */
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';

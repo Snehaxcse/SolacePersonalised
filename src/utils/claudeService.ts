@@ -65,6 +65,7 @@ export async function getJournalReflection(journalText: string): Promise<string>
 }
 
 export async function getWordOfDay(): Promise<{ word: string; explanation: string }> {
+  // Library UI hides this in Phase 4B. Keep the action and localStorage key solace_word_of_day for compatibility.
   try {
     const raw = await invokeClaude({ action: 'word_of_day' });
     const json = extractJSON(raw);

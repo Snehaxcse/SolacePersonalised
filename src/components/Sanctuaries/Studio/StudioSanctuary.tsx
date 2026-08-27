@@ -11,10 +11,8 @@ import { useStudioCanvas } from './useStudioCanvas';
 import StudioCanvas from './StudioCanvas';
 import StudioToolbar from './StudioToolbar';
 import StudioGallery, { useStudioGallery } from './StudioGallery';
-import StudioCompanion from './StudioCompanion';
 import StudioWhisper from './StudioWhisper';
 import StudioRitual from './StudioRitual';
-import type { ConvoMessage } from './studioTypes';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 export default function StudioSanctuary() {
@@ -30,8 +28,6 @@ export default function StudioSanctuary() {
 
   const gallery = useStudioGallery();
   const [whisperMode, setWhisperMode] = useState(false);
-  const [convoOpen, setConvoOpen] = useState(false);
-  const [messages, setMessages] = useState<ConvoMessage[]>([]);
   const [suggestion, setSuggestion] = useState<string | null>(null);
   const [showSuggestion, setShowSuggestion] = useState(false);
   const [pendingAdd, setPendingAdd] = useState<AIShapeResult | null>(null);
@@ -91,8 +87,10 @@ export default function StudioSanctuary() {
   };
 
   const keepDrawing = () => {
-    const ok = gallery.saveDrawing(canvas.canvasRef.current, canvas.canvasBg);
-    setLiveMessage(ok ? 'Kept in your gallery, and downloaded.' : 'Gallery is full. Remove a piece to make room.');
+    const result = gallery.saveDrawing(canvas.canvasRef.current, canvas.canvasBg);
+    if (result === 'kept') setLiveMessage('Kept in your gallery, and downloaded.');
+    else if (result === 'quota') setLiveMessage('This piece could not be kept on this device. Nothing already saved was removed.');
+    else setLiveMessage('The gallery cannot hold another piece here. Nothing already saved was removed.');
     setRitualOpen(false);
     setSatWithIt(true);
   };
@@ -148,15 +146,11 @@ export default function StudioSanctuary() {
         onOpenGallery={() => gallery.setShowGallery(true)}
         whisperMode={whisperMode}
         onToggleWhisper={() => setWhisperMode(w => !w)}
-        convoOpen={convoOpen}
-        onToggleConvo={() => setConvoOpen(o => !o)}
       />
 
       <StudioWhisper
         enabled={whisperMode}
         onChange={setWhisperMode}
-        convoOpen={convoOpen}
-        latestMessage={messages[messages.length - 1]}
       />
 
       <StudioRitual
@@ -204,7 +198,7 @@ export default function StudioSanctuary() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {showSuggestion && suggestion && !convoOpen && (
+        {showSuggestion && suggestion && (
           <motion.div
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 max-w-xs sm:max-w-sm px-5 py-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-md"
             initial={{ opacity: 0, y: reduceMotion ? 0 : 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
@@ -245,23 +239,13 @@ export default function StudioSanctuary() {
         )}
       </AnimatePresence>
 
-      <StudioCompanion
-        open={convoOpen}
-        onOpenChange={setConvoOpen}
-        isFirstVisit={isFirstVisit}
-        getDominantColors={canvas.getDominantColors}
-        getMinutesDrawing={canvas.getMinutesDrawing}
-        messages={messages}
-        onMessagesChange={setMessages}
-      />
-
       <StudioGallery
         open={gallery.showGallery}
         onOpenChange={gallery.setShowGallery}
         gallery={gallery.gallery}
         onGalleryChange={gallery.setGallery}
-        galleryFull={gallery.galleryFull}
-        onGalleryFullChange={gallery.setGalleryFull}
+        galleryNotice={gallery.galleryNotice}
+        onGalleryNoticeChange={gallery.setGalleryNotice}
       />
       </main>
     </div>

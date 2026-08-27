@@ -63,7 +63,7 @@ export default function StudioCanvas({
           onTouchEnd={onPointerUp}
         />
         <p className="sr-only">
-          This canvas is for drawing with a pointer or touch. Save, undo, gallery, and companion controls are available around the canvas.
+          This canvas is for drawing with a pointer or touch. Save, undo, gallery, and reflect controls are available around the canvas.
         </p>
       </div>
     </>

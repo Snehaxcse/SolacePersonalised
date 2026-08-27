@@ -32,11 +32,6 @@ function PlantSVG({ stage, drooping, reduceMotion }: { stage: PlantStage; droopi
       ? { initial: false as const, animate: { scale: 1, opacity: 1 }, transition: { duration: 0 } }
       : { initial: { scale: 0, opacity: 0 }, animate: { scale: 1, opacity: 1 }, transition: { delay, duration } };
 
-  const stemEnd = stage === 0 ? 195 : stage === 1 ? 150 : stage === 2 ? 118 : stage === 3 ? 88 : 72;
-  const stemPath = drooping
-    ? `M100 195 Q102 ${Math.round((195 + stemEnd) / 2)} 96 ${stemEnd}`
-    : `M100 195 Q100 ${Math.round((195 + stemEnd) / 2)} 100 ${stemEnd}`;
-
   return (
     <motion.svg
       viewBox="0 0 200 260"
@@ -46,79 +41,110 @@ function PlantSVG({ stage, drooping, reduceMotion }: { stage: PlantStage; droopi
       transition={{ duration: reduceMotion ? 0 : 1 }}
       aria-hidden="true"
     >
-      <ellipse cx="100" cy="228" rx="48" ry="10" fill="#8B6914" opacity="0.25" />
-      <path d="M62 222 Q100 248 138 222 L146 198 H54 Z" fill="#8B6914" opacity="0.75" />
-      <rect x="54" y="192" width="92" height="14" rx="6" fill="#A07820" opacity="0.65" />
+      <ellipse cx="100" cy="228" rx="52" ry="11" fill="#8B6914" opacity="0.22" />
+      <path d="M58 220 Q100 250 142 220 L150 196 H50 Z" fill="#8B6914" opacity="0.8" />
+      <rect x="50" y="190" width="100" height="16" rx="7" fill="#A07820" opacity="0.7" />
 
-      <g transform={drooping ? 'rotate(5, 100, 195)' : undefined}>
+      <g transform={drooping && stage > 0 ? 'rotate(5, 100, 190)' : undefined}>
         {stage === 0 && (
           <motion.ellipse
-            cx="100" cy="196" rx="7" ry="5" fill="#6B4F16"
-            animate={reduceMotion ? { opacity: 0.9 } : { opacity: [0.65, 1, 0.65] }}
+            cx="100" cy="192" rx="9" ry="6" fill="#5C4310"
+            animate={reduceMotion ? { opacity: 1 } : { opacity: [0.7, 1, 0.7] }}
             transition={reduceMotion ? { duration: 0 } : { repeat: Infinity, duration: 3 }}
           />
         )}
 
-        {stage >= 1 && (
-          <motion.path
-            d={stemPath}
-            stroke={stage >= 3 ? '#3d6b40' : '#5C8A5E'}
-            strokeWidth={stage >= 3 ? 4 : 3}
-            fill="none"
-            strokeLinecap="round"
-            initial={reduceMotion ? false : { pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: reduceMotion ? 0 : 1.2, ease: 'easeOut' }}
-          />
-        )}
-
         {stage === 1 && (
-          <motion.ellipse cx="100" cy={stemEnd - 4} rx="4" ry="6" fill="#7DB87F" {...appear(0.4, 0.5)} />
-        )}
-
-        {stage >= 2 && (
           <>
-            <motion.ellipse cx="78" cy="158" rx={stage >= 3 ? 18 : 13} ry={stage >= 3 ? 9 : 7} fill="#A8C5A0" transform="rotate(-32 78 158)" {...appear(0.25)} />
-            <motion.ellipse cx="122" cy="150" rx={stage >= 3 ? 18 : 13} ry={stage >= 3 ? 9 : 7} fill="#5C8A5E" transform="rotate(28 122 150)" {...appear(0.4)} />
+            <motion.path
+              d="M100 190 Q101 175 100 158"
+              stroke="#9CB88A"
+              strokeWidth="2.5"
+              fill="none"
+              strokeLinecap="round"
+              initial={reduceMotion ? false : { pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: reduceMotion ? 0 : 1 }}
+            />
+            <motion.ellipse cx="100" cy="152" rx="5" ry="8" fill="#C5D9B4" {...appear(0.4, 0.45)} />
           </>
         )}
 
-        {stage >= 3 && (
+        {stage === 2 && (
           <>
-            <motion.ellipse cx="70" cy="118" rx="20" ry="10" fill="#A8C5A0" transform="rotate(-48 70 118)" {...appear(0.2)} />
-            <motion.ellipse cx="128" cy="110" rx="20" ry="10" fill="#5C8A5E" transform="rotate(42 128 110)" {...appear(0.35)} />
-            <motion.ellipse cx="92" cy="98" rx="16" ry="8" fill="#7DB87F" transform="rotate(-18 92 98)" {...appear(0.5)} />
-            <motion.ellipse cx="112" cy="96" rx="15" ry="8" fill="#4A7C4D" transform="rotate(20 112 96)" {...appear(0.55)} />
-            {stage === 3 && (
-              <motion.ellipse cx="100" cy="78" rx="6" ry="8" fill="#F9A8D4" opacity="0.85" {...appear(0.6, 0.5)} />
-            )}
+            <motion.path
+              d="M100 190 Q100 160 100 128"
+              stroke="#6B9A62"
+              strokeWidth="3"
+              fill="none"
+              strokeLinecap="round"
+              initial={reduceMotion ? false : { pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: reduceMotion ? 0 : 1.1 }}
+            />
+            <motion.ellipse cx="76" cy="138" rx="16" ry="9" fill="#B7D4A8" transform="rotate(-28 76 138)" {...appear(0.25)} />
+            <motion.ellipse cx="124" cy="134" rx="16" ry="9" fill="#7DA86F" transform="rotate(26 124 134)" {...appear(0.4)} />
           </>
         )}
 
-        {stage >= 4 && (
+        {stage === 3 && (
           <>
+            <motion.path
+              d="M100 190 Q100 140 100 92"
+              stroke="#3d6b40"
+              strokeWidth="4.5"
+              fill="none"
+              strokeLinecap="round"
+              initial={reduceMotion ? false : { pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: reduceMotion ? 0 : 1.2 }}
+            />
+            <motion.ellipse cx="68" cy="155" rx="14" ry="8" fill="#8FBF84" transform="rotate(-40 68 155)" {...appear(0.15)} />
+            <motion.ellipse cx="132" cy="148" rx="14" ry="8" fill="#5C8A5E" transform="rotate(38 132 148)" {...appear(0.22)} />
+            <motion.ellipse cx="64" cy="118" rx="22" ry="11" fill="#A8C5A0" transform="rotate(-50 64 118)" {...appear(0.3)} />
+            <motion.ellipse cx="138" cy="110" rx="22" ry="11" fill="#4A7C4D" transform="rotate(46 138 110)" {...appear(0.38)} />
+            <motion.ellipse cx="88" cy="96" rx="18" ry="10" fill="#7DB87F" transform="rotate(-16 88 96)" {...appear(0.46)} />
+            <motion.ellipse cx="116" cy="92" rx="17" ry="10" fill="#3d6b40" transform="rotate(18 116 92)" {...appear(0.52)} />
+            <motion.ellipse cx="100" cy="78" rx="7" ry="10" fill="#6B8F4E" {...appear(0.6, 0.5)} />
+          </>
+        )}
+
+        {stage === 4 && (
+          <>
+            <motion.path
+              d="M100 190 Q100 130 100 78"
+              stroke="#2F5A32"
+              strokeWidth="5"
+              fill="none"
+              strokeLinecap="round"
+              initial={reduceMotion ? false : { pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: reduceMotion ? 0 : 1.2 }}
+            />
+            <motion.ellipse cx="62" cy="150" rx="16" ry="9" fill="#7DA86F" transform="rotate(-42 62 150)" {...appear(0.1)} />
+            <motion.ellipse cx="140" cy="142" rx="16" ry="9" fill="#4A7C4D" transform="rotate(40 140 142)" {...appear(0.16)} />
+            <motion.ellipse cx="58" cy="108" rx="24" ry="12" fill="#A8C5A0" transform="rotate(-52 58 108)" {...appear(0.22)} />
+            <motion.ellipse cx="144" cy="100" rx="24" ry="12" fill="#3d6b40" transform="rotate(48 144 100)" {...appear(0.28)} />
+            <motion.ellipse cx="84" cy="88" rx="18" ry="10" fill="#5C8A5E" transform="rotate(-20 84 88)" {...appear(0.34)} />
+            <motion.ellipse cx="120" cy="84" rx="18" ry="10" fill="#2F5A32" transform="rotate(22 120 84)" {...appear(0.4)} />
             {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
               <motion.ellipse
                 key={angle}
-                cx={100 + 18 * Math.cos((angle * Math.PI) / 180)}
-                cy={68 + 18 * Math.sin((angle * Math.PI) / 180)}
-                rx="11" ry="6"
+                cx={100 + 22 * Math.cos((angle * Math.PI) / 180)}
+                cy={58 + 22 * Math.sin((angle * Math.PI) / 180)}
+                rx="13" ry="7"
                 fill={i % 2 === 0 ? '#F9A8D4' : '#FBCFE8'}
-                transform={`rotate(${angle} ${100 + 18 * Math.cos((angle * Math.PI) / 180)} ${68 + 18 * Math.sin((angle * Math.PI) / 180)})`}
-                {...appear(0.08 * i, 0.55)}
+                transform={`rotate(${angle} ${100 + 22 * Math.cos((angle * Math.PI) / 180)} ${58 + 22 * Math.sin((angle * Math.PI) / 180)})`}
+                {...appear(0.08 * i, 0.5)}
               />
             ))}
             <motion.circle
-              cx="100" cy="68" r="11" fill="#FDE68A"
+              cx="100" cy="58" r="13" fill="#FDE68A"
               initial={reduceMotion ? false : { scale: 0 }}
               animate={{ scale: 1 }}
               transition={reduceMotion ? { duration: 0 } : { delay: 0.7, duration: 0.5, type: 'spring' }}
             />
           </>
-        )}
-
-        {drooping && stage >= 2 && (
-          <path d="M100 160 Q90 175 85 190" stroke="#A8C5A0" strokeWidth="2" fill="none" strokeLinecap="round" opacity="0.5" />
         )}
       </g>
     </motion.svg>
@@ -142,6 +168,7 @@ export default function GardenSanctuary() {
   const [selectedStone, setSelectedStone] = useState<number | null>(null);
   const [softDroop, setSoftDroop] = useState(false);
   const [keptPlace, setKeptPlace] = useState(false);
+  const [longAbsence, setLongAbsence] = useState(false);
   const [dimmed, setDimmed] = useState(false);
 
   const onCycleComplete = useCallback((n: number) => {
@@ -199,9 +226,13 @@ export default function GardenSanctuary() {
       if (Number.isFinite(prevTime)) awayMs = Date.now() - prevTime;
     }
 
-    if (awayMs > 3 * 24 * 60 * 60 * 1000) {
+    const day = 24 * 60 * 60 * 1000;
+    if (awayMs > 3 * day) {
       setSoftDroop(true);
       setKeptPlace(true);
+    }
+    if (awayMs > 10 * day) {
+      setLongAbsence(true);
     }
 
     if (previous !== today && gardenVisitAppliedFor !== today) {
@@ -278,13 +309,19 @@ export default function GardenSanctuary() {
               {growthStatus}
             </p>
             {keptPlace && (
-              <p
-                aria-live="polite"
-                className="text-[#3d6b40] text-base font-light text-center mt-3 max-w-xs leading-6"
-                style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
-              >
-                the garden kept your place.
-              </p>
+              <div aria-live="polite" className="mt-3 max-w-xs text-center">
+                <p
+                  className="text-[#3d6b40] text-base font-light leading-6"
+                  style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+                >
+                  the garden kept your place.
+                </p>
+                {longAbsence && (
+                  <p className="text-[#6B4F16] text-xs font-light mt-2 leading-5">
+                    nothing was asked of you while you were away.
+                  </p>
+                )}
+              </div>
             )}
             <p className="text-[#6B4F16] text-xs tracking-wide text-center mt-2 max-w-xs">
               you've returned {visitCount} time{visitCount === 1 ? '' : 's'}.

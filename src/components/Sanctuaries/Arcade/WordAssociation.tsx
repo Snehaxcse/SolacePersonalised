@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { getWordAssociationStart, getWordAssociationObservation } from '../../../utils/claudeService';
 import { useAiConsent } from '../../../context/AiConsentContext';
 
@@ -7,12 +7,10 @@ export default function WordAssociation() {
   const [startWord, setStartWord] = useState('');
   const [input, setInput] = useState('');
   const [words, setWords] = useState<string[]>([]);
-  const [timeLeft, setTimeLeft] = useState(60);
   const [active, setActive] = useState(false);
   const [done, setDone] = useState(false);
   const [observation, setObservation] = useState('');
   const [loading, setLoading] = useState(false);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const start = async () => {
     setLoading(true);
@@ -20,31 +18,20 @@ export default function WordAssociation() {
     setStartWord(word);
     setWords([]);
     setInput('');
-    setTimeLeft(60);
     setDone(false);
     setObservation('');
     setActive(true);
     setLoading(false);
   };
 
-  useEffect(() => {
-    if (!active) return;
-    timer.current = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          clearInterval(timer.current!);
-          setActive(false);
-          setDone(true);
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    return () => { if (timer.current) clearInterval(timer.current); };
-  }, [active]);
+  const stop = () => {
+    setActive(false);
+    setDone(true);
+  };
 
   const handleKey = (e: React.KeyboardEvent) => {
     if ((e.key === ' ' || e.key === 'Enter') && input.trim()) {
+      e.preventDefault();
       setWords(w => [...w, input.trim()]);
       setInput('');
     }
@@ -67,14 +54,10 @@ export default function WordAssociation() {
       )}
       {active && startWord && (
         <>
-          <div className="flex items-center gap-4">
-            <p className="text-[#C084FC] text-2xl font-light" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
-              <span className="sr-only">Starting word: </span>{startWord}
-            </p>
-            <span className="text-[#F0E6FF]/75 text-sm" aria-label={`${timeLeft} seconds remaining`}>
-              {timeLeft}s
-            </span>
-          </div>
+          <p className="text-[#C084FC] text-2xl font-light" style={{ fontFamily: 'Cormorant Garamond, serif' }}>
+            <span className="sr-only">Starting word: </span>{startWord}
+          </p>
+          <p className="text-[#F0E6FF]/70 text-xs">you can stop whenever you want.</p>
           <label className="flex flex-col gap-1">
             <span className="text-[#F0E6FF]/70 text-xs">Your word</span>
             <input
@@ -91,6 +74,13 @@ export default function WordAssociation() {
               <span key={i} className="text-[#F0E6FF]/80 text-xs bg-[#2D2060] px-2 py-1 rounded-full">{w}</span>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={stop}
+            className="self-start text-xs text-[#F0E6FF]/75 tracking-wide"
+          >
+            that's enough
+          </button>
         </>
       )}
       {done && (
