@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import SanctuaryHeader from '../../shared/SanctuaryHeader';
 import { getLibraryReadingNook, getJournalReflection, getWordOfDay } from '../../../utils/claudeService';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
@@ -8,22 +9,23 @@ import { readQuizWeather } from '../../../utils/solaceMemory';
 import { useBreathingPattern, type BreathPhaseConfig } from '../../../hooks/useBreathingPattern';
 import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
 import { useRovingTabs } from '../../../hooks/useRovingTabs';
+import {
+  createJournalEntry,
+  exportJournalText,
+  formatJournalStamp,
+  loadJournalEntries,
+  saveJournalEntries,
+  type JournalEntry,
+} from '../../../utils/journalStore';
 
-const TABS = ['nook', 'journal', 'breathe', 'word'] as const;
+const TABS = ['journal', 'nook', 'breathe', 'word'] as const;
 type Tab = (typeof TABS)[number];
 
 const TAB_LABELS: Record<Tab, string> = {
-  nook: 'reading',
   journal: 'journal',
+  nook: 'reading',
   breathe: 'breathe',
   word: 'word',
-};
-
-const TAB_TITLES: Record<Tab, string> = {
-  nook: 'curated for you',
-  journal: 'private journal',
-  breathe: '4 · 7 · 8 breathing',
-  word: 'word of today',
 };
 
 const LIBRARY_BREATH: readonly BreathPhaseConfig[] = [
@@ -33,19 +35,33 @@ const LIBRARY_BREATH: readonly BreathPhaseConfig[] = [
 ];
 
 export default function LibrarySanctuary() {
+  const navigate = useNavigate();
   const { requestConsent } = useAiConsent();
   const reduceMotion = usePrefersReducedMotion();
-  const [tab, setTab] = useState<Tab>('nook');
+  const [tab, setTab] = useState<Tab>('journal');
   const { refs, onKeyDown } = useRovingTabs(TABS, tab, setTab);
   const weather = readQuizWeather();
 
   const [nook, setNook] = useState<{ poem: string; prose: string; sentence: string } | null>(null);
   const [nookLoading, setNookLoading] = useState(false);
 
-  const [journalText, setJournalText] = useLocalStorage<string>('solace_journal_entries', '');
+  const [entries, setEntries] = useState<JournalEntry[]>(() => loadJournalEntries());
+  const [activeId, setActiveId] = useState<string | null>(() => {
+    const loaded = loadJournalEntries();
+    return loaded[loaded.length - 1]?.id ?? null;
+  });
+  const [draft, setDraft] = useState(() => {
+    const loaded = loadJournalEntries();
+    return loaded[loaded.length - 1]?.text ?? '';
+  });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [reflection, setReflection] = useState('');
   const [reflectLoading, setReflectLoading] = useState(false);
-  const journalTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  const activeIdRef = useRef(activeId);
+  activeIdRef.current = activeId;
 
   const [wordData, setWordData] = useLocalStorage<{ word: string; explanation: string; date: string } | null>('solace_word_of_day', null);
 
@@ -56,6 +72,99 @@ export default function LibrarySanctuary() {
     start: startBreathe,
     stop: stopBreathe,
   } = useBreathingPattern({ phases: LIBRARY_BREATH });
+
+  const entriesRef = useRef(entries);
+  entriesRef.current = entries;
+
+  const persist = useCallback((next: JournalEntry[]) => {
+    saveJournalEntries(next);
+    setEntries(next);
+    entriesRef.current = next;
+  }, []);
+
+  useEffect(() => () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const text = draftRef.current;
+    const id = activeIdRef.current;
+    const list = entriesRef.current;
+    if (!id) {
+      if (text.trim()) saveJournalEntries([...list, createJournalEntry(text)]);
+      return;
+    }
+    saveJournalEntries(list.map(entry => (
+      entry.id === id ? { ...entry, text, updatedAt: new Date().toISOString() } : entry
+    )));
+  }, []);
+
+  const activeEntry = entries.find(entry => entry.id === activeId) ?? null;
+
+  const commitDraft = useCallback((text: string, id: string | null) => {
+    const list = entriesRef.current;
+    if (!id) {
+      if (!text.trim()) return null;
+      const created = createJournalEntry(text);
+      persist([...list, created]);
+      setActiveId(created.id);
+      return created.id;
+    }
+    persist(list.map(entry => (
+      entry.id === id
+        ? { ...entry, text, updatedAt: new Date().toISOString() }
+        : entry
+    )));
+    return id;
+  }, [persist]);
+
+  const handleJournalChange = (val: string) => {
+    setDraft(val);
+    setReflection('');
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => commitDraft(val, activeId), 400);
+  };
+
+  const openEntry = (id: string) => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    commitDraft(draft, activeId);
+    const next = entriesRef.current.find(entry => entry.id === id);
+    setActiveId(id);
+    setDraft(next?.text ?? '');
+    setReflection('');
+    setDeleteId(null);
+  };
+
+  const startNewPage = () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    if (activeId && !draft.trim()) return;
+    commitDraft(draft, activeId);
+    const created = createJournalEntry('');
+    persist([...entriesRef.current, created]);
+    setActiveId(created.id);
+    setDraft('');
+    setReflection('');
+    setDeleteId(null);
+  };
+
+  const deleteEntry = (id: string) => {
+    const next = entriesRef.current.filter(entry => entry.id !== id);
+    persist(next);
+    const fallback = next[next.length - 1] ?? null;
+    setActiveId(fallback?.id ?? null);
+    setDraft(fallback?.text ?? '');
+    setDeleteId(null);
+    setReflection('');
+  };
+
+  const exportJournal = () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    commitDraft(draft, activeId);
+    const blob = new Blob([exportJournalText(entriesRef.current)], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'solace-journal.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const loadNook = useCallback(async () => {
     setNookLoading(true);
@@ -69,24 +178,19 @@ export default function LibrarySanctuary() {
   }, [tab, nook, loadNook]);
 
   useEffect(() => {
+    if (tab !== 'word') return;
     const today = new Date().toDateString();
     if (!wordData || wordData.date !== today) {
       getWordOfDay().then(data => setWordData({ ...data, date: today }));
     }
-    // Word of day is fetched once on mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleJournalChange = (val: string) => {
-    setJournalText(val);
-    if (journalTimer.current) clearTimeout(journalTimer.current);
-  };
+  }, [tab, wordData, setWordData]);
 
   const handleReflect = async () => {
-    if (!journalText.trim()) return;
+    const text = draft.trim();
+    if (!text) return;
     await requestConsent({ force: true });
     setReflectLoading(true);
-    const r = await getJournalReflection(journalText);
+    const r = await getJournalReflection(text);
     setReflection(r);
     setReflectLoading(false);
   };
@@ -103,12 +207,14 @@ export default function LibrarySanctuary() {
     transition: { duration: reduceMotion ? 0.15 : 0.5 },
   };
 
+  const entryList = entries.slice().reverse();
+
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col" style={{ backgroundColor: '#1A1F3A' }}>
       <SanctuaryHeader sanctuary="library" textColor="text-[#F5F0E8]" />
 
       <nav
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2 bg-[#2D3561]/80 backdrop-blur-md rounded-full px-3 py-2"
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2 bg-[#2D3561]/80 backdrop-blur-md rounded-full px-3 py-2 max-w-[calc(100vw-1.5rem)] overflow-x-auto"
         role="tablist"
         aria-label="Library"
       >
@@ -124,7 +230,7 @@ export default function LibrarySanctuary() {
             tabIndex={tab === t ? 0 : -1}
             onClick={() => setTab(t)}
             onKeyDown={e => onKeyDown(e, index)}
-            className={`px-4 py-1.5 rounded-full text-xs font-light tracking-wide transition-all duration-300 ${
+            className={`px-4 py-1.5 rounded-full text-xs font-light tracking-wide transition-all duration-300 whitespace-nowrap ${
               tab === t ? 'bg-[#C9A84C] text-[#1A1F3A]' : 'text-[#F5F0E8]/80 hover:text-[#F5F0E8]'
             }`}
           >
@@ -133,7 +239,7 @@ export default function LibrarySanctuary() {
         ))}
       </nav>
 
-      <main id="main" className="flex-1 pt-20 pb-24 px-4 sm:px-8 max-w-2xl mx-auto w-full">
+      <main id="main" className="flex-1 pt-20 pb-24 px-4 sm:px-8 max-w-3xl mx-auto w-full">
         <AnimatePresence mode="wait">
           {tab === 'nook' && (
             <motion.div
@@ -143,12 +249,12 @@ export default function LibrarySanctuary() {
               aria-labelledby="library-tab-nook"
               {...panelMotion}
             >
-              <h1 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-2">{TAB_TITLES.nook}</h1>
+              <h1 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-2">a quiet page</h1>
               {weather && (
                 <p className="text-[#F5F0E8]/75 text-xs font-light italic mb-8">for a {weather} day</p>
               )}
               {!weather && <div className="mb-8" />}
-              {nookLoading && <p className="text-[#F5F0E8]/75 text-sm italic">gathering words...</p>}
+              {nookLoading && <p className="text-[#F5F0E8]/75 text-sm italic">finding a page...</p>}
               {nook && (
                 <div className="flex flex-col gap-6">
                   <div className="border-l-2 border-[#C9A84C]/40 pl-6 py-2">
@@ -177,7 +283,7 @@ export default function LibrarySanctuary() {
                     onClick={handleGather}
                     className="text-[#C9A84C] text-xs tracking-wide transition-colors duration-300 text-center"
                   >
-                    gather something else
+                    another page
                   </button>
                 </div>
               )}
@@ -191,47 +297,120 @@ export default function LibrarySanctuary() {
               role="tabpanel"
               aria-labelledby="library-tab-journal"
               {...panelMotion}
-              className="flex flex-col h-full"
+              className="flex flex-col"
             >
-              <h1 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-6">{TAB_TITLES.journal}</h1>
-              <label htmlFor="library-journal" className="sr-only">
-                Private journal
-              </label>
-              <textarea
-                id="library-journal"
-                value={journalText}
-                onChange={e => handleJournalChange(e.target.value)}
-                placeholder="begin wherever you are..."
-                aria-describedby="journal-advice-note"
-                className="flex-1 min-h-64 w-full bg-transparent text-[#F5F0E8]/90 text-base leading-8 font-light resize-none outline-none placeholder-[#F5F0E8]/45 border-b border-[#C9A84C]/20 pb-4 mb-6"
-                style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', caretColor: '#C9A84C' }}
-              />
-              <button
-                type="button"
-                onClick={handleReflect}
-                disabled={reflectLoading || !journalText.trim()}
-                aria-describedby="journal-advice-note"
-                className="self-start text-xs text-[#C9A84C] transition-colors duration-300 tracking-widest uppercase disabled:opacity-40"
-              >
-                {reflectLoading ? 'listening...' : 'reflect'}
-              </button>
-              <p id="journal-advice-note" className="mt-3 text-[#F5F0E8]/70 text-[11px] font-light leading-5 max-w-md">
-                Optional AI reflection on what you wrote. This is not medical or therapeutic advice.
-              </p>
-              <AnimatePresence>
-                {reflection && (
-                  <motion.p
-                    initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    aria-live="polite"
-                    className="mt-5 text-[#C9A84C] text-base leading-7 font-light"
-                    style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontStyle: 'italic' }}
-                  >
-                    {reflection}
-                  </motion.p>
-                )}
-              </AnimatePresence>
+              <h1 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-2">private journal</h1>
+              <p className="text-[#F5F0E8]/70 text-xs font-light mb-5">kept on this device.</p>
+
+              <div className="flex flex-col sm:flex-row gap-5">
+                <div className="sm:w-44 shrink-0 sm:sticky sm:top-20">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <h2 className="text-[#F5F0E8]/70 text-[10px] tracking-widest uppercase">pages</h2>
+                    <button type="button" onClick={startNewPage} className="text-[#C9A84C] text-[10px] tracking-wide">
+                      new page
+                    </button>
+                  </div>
+                  {entryList.length === 0 ? (
+                    <p className="text-[#F5F0E8]/50 text-xs font-light">no pages yet.</p>
+                  ) : (
+                    <ul className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-visible pb-1 sm:max-h-[60vh] sm:overflow-y-auto">
+                      {entryList.map(entry => (
+                        <li key={entry.id} className="shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => openEntry(entry.id)}
+                            aria-current={entry.id === activeId ? 'true' : undefined}
+                            className={`block w-40 sm:w-full text-left rounded-xl px-3 py-2 text-xs font-light ${
+                              entry.id === activeId ? 'bg-[#C9A84C]/20 text-[#C9A84C]' : 'bg-[#2D3561]/50 text-[#F5F0E8]/80'
+                            }`}
+                          >
+                            <span className="block">{formatJournalStamp(entry.createdAt)}</span>
+                            <span className="block truncate text-[10px] opacity-70 mt-0.5">
+                              {entry.text.trim() || 'empty page'}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="flex-1 flex flex-col min-w-0">
+                  <label htmlFor="library-journal" className="sr-only">
+                    Journal page
+                  </label>
+                  <textarea
+                    id="library-journal"
+                    value={draft}
+                    onChange={e => handleJournalChange(e.target.value)}
+                    placeholder="begin wherever you are..."
+                    aria-describedby="journal-privacy-note"
+                    className="min-h-56 w-full bg-transparent text-[#F5F0E8]/90 text-base leading-8 font-light resize-none outline-none placeholder-[#F5F0E8]/45 border-b border-[#C9A84C]/20 pb-4 mb-4"
+                    style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', caretColor: '#C9A84C' }}
+                  />
+                  <p id="journal-privacy-note" className="text-[#F5F0E8]/60 text-[11px] font-light leading-5 mb-4">
+                    Writing stays here unless you choose to reflect or export. Reflection is optional and not medical advice.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <button
+                      type="button"
+                      onClick={handleReflect}
+                      disabled={reflectLoading || !draft.trim()}
+                      className="text-xs text-[#C9A84C] tracking-widest uppercase disabled:opacity-40"
+                    >
+                      {reflectLoading ? 'listening...' : 'reflect'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/companion')}
+                      className="text-xs text-[#F5F0E8]/75 tracking-wide"
+                    >
+                      sit with this
+                    </button>
+                    <button
+                      type="button"
+                      onClick={exportJournal}
+                      disabled={entries.length === 0 && !draft.trim()}
+                      className="text-xs text-[#F5F0E8]/75 tracking-wide disabled:opacity-40"
+                    >
+                      export
+                    </button>
+                    {activeEntry && (
+                      deleteId === activeEntry.id ? (
+                        <span className="flex items-center gap-3 text-xs">
+                          <button type="button" onClick={() => deleteEntry(activeEntry.id)} className="text-[#E8B4B8]">
+                            delete this page
+                          </button>
+                          <button type="button" onClick={() => setDeleteId(null)} className="text-[#F5F0E8]/70">
+                            keep
+                          </button>
+                        </span>
+                      ) : (
+                        <button type="button" onClick={() => setDeleteId(activeEntry.id)} className="text-xs text-[#F5F0E8]/60 tracking-wide">
+                          delete page
+                        </button>
+                      )
+                    )}
+                  </div>
+                  <p className="mt-2 text-[#F5F0E8]/50 text-[10px] font-light">
+                    sitting with this does not take your writing with it.
+                  </p>
+                  <AnimatePresence>
+                    {reflection && (
+                      <motion.p
+                        initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        aria-live="polite"
+                        className="mt-5 text-[#C9A84C] text-base leading-7 font-light"
+                        style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontStyle: 'italic' }}
+                      >
+                        {reflection}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -244,7 +423,7 @@ export default function LibrarySanctuary() {
               {...panelMotion}
               className="flex flex-col items-center pt-8"
             >
-              <h1 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-12">{TAB_TITLES.breathe}</h1>
+              <h1 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-12">4 · 7 · 8 breathing</h1>
 
               <div className="relative w-48 h-36 mb-6" aria-hidden="true">
                 <div className="absolute inset-0 rounded-r-lg rounded-l-sm" style={{ backgroundColor: '#2D3561', boxShadow: '2px 2px 12px rgba(0,0,0,0.4)' }} />
@@ -271,12 +450,12 @@ export default function LibrarySanctuary() {
                 aria-atomic="true"
                 className="text-[#C9A84C] text-sm font-light tracking-widest text-center mb-8 min-h-[1.25rem]"
               >
-                {breathActive ? currentBreath.label : 'breathing ready'}
+                {breathActive ? currentBreath.label : 'if you want to breathe'}
               </p>
 
               {breathCycles >= 3 && (
                 <p className="text-[#F5F0E8]/75 text-xs italic mb-6 tracking-wide">
-                  you can rest now.
+                  you can stop whenever you want.
                 </p>
               )}
 
@@ -309,7 +488,8 @@ export default function LibrarySanctuary() {
               {...panelMotion}
               className="flex flex-col items-center pt-12"
             >
-              <h1 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-12">{TAB_TITLES.word}</h1>
+              <h1 className="text-[#C9A84C] font-light text-sm tracking-widest uppercase mb-4">a word</h1>
+              <p className="text-[#F5F0E8]/60 text-xs font-light mb-10">only if you want one.</p>
               {wordData ? (
                 <div className="text-center bg-[#2D3561]/60 rounded-3xl px-10 py-10 max-w-sm">
                   <p
@@ -326,7 +506,7 @@ export default function LibrarySanctuary() {
                   </p>
                 </div>
               ) : (
-                <p className="text-[#F5F0E8]/75 text-sm italic">finding a word for you...</p>
+                <p className="text-[#F5F0E8]/75 text-sm italic">looking for a word...</p>
               )}
             </motion.div>
           )}

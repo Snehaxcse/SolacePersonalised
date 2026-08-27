@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
 
 const PAIRS = [
   { color: '#C084FC', name: 'violet' },
@@ -15,23 +16,18 @@ const PAIRS = [
 interface Card { id: number; color: string; name: string; matched: boolean; flipped: boolean; }
 
 export default function MemoryGame() {
-  const [size, setSize] = useState<[number, number]>([4, 4]);
+  const reduceMotion = usePrefersReducedMotion();
   const [cards, setCards] = useState<Card[]>([]);
   const [flipped, setFlipped] = useState<number[]>([]);
   const [completed, setCompleted] = useState(false);
-  const [message, setMessage] = useState('');
 
   const initCards = useCallback(() => {
-    const [cols, rows] = size;
-    const total = cols * rows;
-    const pairCount = total / 2;
-    const traits = Array.from({ length: pairCount }, (_, i) => PAIRS[i % PAIRS.length]);
+    const traits = PAIRS.slice(0, 8);
     const shuffled = [...traits, ...traits].sort(() => Math.random() - 0.5);
     setCards(shuffled.map((trait, id) => ({ id, color: trait.color, name: trait.name, matched: false, flipped: false })));
     setFlipped([]);
     setCompleted(false);
-    setMessage('');
-  }, [size]);
+  }, []);
 
   useEffect(() => { initCards(); }, [initCards]);
 
@@ -64,24 +60,19 @@ export default function MemoryGame() {
   useEffect(() => {
     if (cards.length > 0 && cards.every(c => c.matched)) {
       setCompleted(true);
-      setMessage('well done. your mind is sharper than you think.');
-      const nextSize: [number, number] = size[0] === 4 && size[1] === 4 ? [4, 5] : size[0] === 4 && size[1] === 5 ? [5, 5] : [4, 4];
-      setTimeout(() => { setSize(nextSize); }, 2500);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cards]);
 
-  const [cols] = size;
   return (
     <div className="flex flex-col items-center gap-4">
       <p className="text-[#F0E6FF]/75 text-xs text-center max-w-xs">
-        Find matching pairs. Each card has a name as well as a color.
+        Find matching pairs. Each card has a name as well as a color. You can stop whenever you want.
       </p>
       <div
         className="grid gap-2"
         role="group"
         aria-label="Memory cards"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, maxWidth: '360px', width: '100%' }}
+        style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', maxWidth: '360px', width: '100%' }}
       >
         {cards.map((card, index) => {
           const faceUp = card.flipped || card.matched;
@@ -98,7 +89,7 @@ export default function MemoryGame() {
               animate={{
                 backgroundColor: faceUp ? card.color : '#2D2060',
               }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: reduceMotion ? 0 : 0.3 }}
             >
               <span className="sr-only">{faceUp ? card.name : 'hidden card'}</span>
               {faceUp && (
@@ -112,11 +103,16 @@ export default function MemoryGame() {
       </div>
       <div aria-live="polite" className="min-h-[1.25rem]">
         <AnimatePresence>
-          {completed && message && (
-            <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="text-[#F0E6FF]/80 text-xs italic text-center tracking-wide">
-              {message}
-            </motion.p>
+          {completed && (
+            <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="flex flex-col items-center gap-3">
+              <p className="text-[#F0E6FF]/80 text-xs italic text-center tracking-wide">
+                that's enough, if you want it to be.
+              </p>
+              <button type="button" onClick={initCards} className="text-xs text-[#C084FC] tracking-wide">
+                another round
+              </button>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

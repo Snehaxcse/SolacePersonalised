@@ -35,12 +35,32 @@ export function useStudioCanvas({ onFirstStroke }: Options = {}) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return 'muted tones';
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    let rS = 0, gS = 0, bS = 0, n = 0;
+    let rS = 0, gS = 0, bS = 0, n = 0, dark = 0;
+    const sampled = Math.floor(data.length / 16);
     for (let i = 0; i < data.length; i += 16) {
-      if (data[i + 3] > 10) { rS += data[i]; gS += data[i + 1]; bS += data[i + 2]; n++; }
+      if (data[i + 3] > 10) {
+        rS += data[i];
+        gS += data[i + 1];
+        bS += data[i + 2];
+        n++;
+        const lum = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+        if (lum < 80) dark++;
+      }
     }
-    if (!n) return 'bare canvas, just beginning';
-    return `${rgbToName(rS / n, gS / n, bS / n)} tones, ${n > 1000 ? 'richly layered' : 'lightly touched'}`;
+    if (!n) return 'mostly open space, very few marks';
+    const density = n / Math.max(sampled, 1);
+    const space = density < 0.08
+      ? 'a lot of open space'
+      : density > 0.4
+        ? 'marks covering much of the page'
+        : 'marks and space sharing the page';
+    const pressure = dark / n > 0.45 ? 'darker marks with more pressure' : 'lighter marks';
+    const movement = strokeCount.current > 18
+      ? 'many repeated strokes'
+      : strokeCount.current > 6
+        ? 'several separate movements'
+        : 'only a few movements';
+    return `${rgbToName(rS / n, gS / n, bS / n)} tones; ${pressure}; ${space}; ${movement}`;
   }, []);
 
   const getMinutesDrawing = () => Math.floor((Date.now() - sessionStartRef.current) / 60000);
@@ -171,23 +191,35 @@ export function useStudioCanvas({ onFirstStroke }: Options = {}) {
     pushSnapshot();
   };
 
-  const letItGo = () => {
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    strokeCount.current = 0;
+    historyRef.current = [];
+    setHistoryLen(0);
+  };
+
+  const letItGo = (options?: { reduceMotion?: boolean }) => {
     const canvas = canvasRef.current;
     if (!canvas || releasing) return;
     setReleasing(true);
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    if (options?.reduceMotion) {
+      clearCanvas();
+      window.setTimeout(() => setReleasing(false), 400);
+      return;
+    }
+
     let alpha = 1;
     const fade = () => {
       alpha -= 0.015;
       if (alpha <= 0) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        strokeCount.current = 0;
-        historyRef.current = [];
-        setHistoryLen(0);
-        setTimeout(() => {
-          setReleasing(false);
-        }, 500);
+        clearCanvas();
+        window.setTimeout(() => setReleasing(false), 500);
         return;
       }
       ctx.fillStyle = `rgba(245, 236, 215, ${0.015})`;
@@ -256,6 +288,7 @@ export function useStudioCanvas({ onFirstStroke }: Options = {}) {
     setCanvasBg,
     bgTexture,
     setBgTexture,
+    isDrawing,
     releasing,
     replaying,
     historyLen,

@@ -95,7 +95,7 @@ export default function WordAssociation() {
       )}
       {done && (
         <div className="flex flex-col gap-4" aria-live="polite">
-          <p className="text-[#F0E6FF]/80 text-xs">Round complete. {words.length} {words.length === 1 ? 'word' : 'words'}.</p>
+          <p className="text-[#F0E6FF]/80 text-xs">a pause. {words.length} {words.length === 1 ? 'word' : 'words'}.</p>
           <div className="flex flex-wrap gap-2">
             {words.map((w, i) => (
               <span key={i} className="text-[#F0E6FF]/80 text-xs bg-[#2D2060] px-2 py-1 rounded-full">{w}</span>
@@ -110,11 +110,11 @@ export default function WordAssociation() {
               onClick={reflectOnWords}
               className="self-start text-xs text-[#C084FC] hover:text-[#E9D5FF] uppercase tracking-widest transition-colors duration-300 border border-[#C084FC]/40 rounded-full px-5 py-2"
             >
-              reflect on my words
+              sit with these words
             </button>
           )}
           <button onClick={start} type="button" className="self-start text-xs text-[#F0E6FF]/75 hover:text-[#F0E6FF] tracking-wide transition-colors duration-300">
-            play again
+            another round
           </button>
         </div>
       )}

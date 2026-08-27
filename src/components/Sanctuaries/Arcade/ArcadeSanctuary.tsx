@@ -4,34 +4,19 @@ import SanctuaryHeader from '../../shared/SanctuaryHeader';
 import MemoryGame from './MemoryGame';
 import WordAssociation from './WordAssociation';
 import ColorSort from './ColorSort';
-import FocusTimer from './FocusTimer';
-import Curiosity from './Curiosity';
 import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
-import { useRovingTabs } from '../../../hooks/useRovingTabs';
 
-const TABS = ['memory', 'words', 'colors', 'focus', 'curiosity'] as const;
-type Tab = (typeof TABS)[number];
+type Need = 'patterned' | 'words' | 'simple';
 
-const TAB_LABELS: Record<Tab, string> = {
-  memory: 'match',
-  words: 'words',
-  colors: 'color',
-  focus: 'focus',
-  curiosity: 'curiosity',
-};
-
-const TAB_TITLES: Record<Tab, string> = {
-  memory: 'pattern memory',
-  words: 'word association',
-  colors: 'color sort',
-  focus: 'deep dive timer',
-  curiosity: 'curiosity',
-};
+const NEEDS: { id: Need; label: string; hint: string }[] = [
+  { id: 'patterned', label: 'something patterned', hint: 'pairs to turn over' },
+  { id: 'words', label: 'something with words', hint: 'one word, then another' },
+  { id: 'simple', label: 'something simple', hint: 'dark to light' },
+];
 
 export default function ArcadeSanctuary() {
-  const [tab, setTab] = useState<Tab>('memory');
+  const [need, setNeed] = useState<Need | null>(null);
   const reduceMotion = usePrefersReducedMotion();
-  const { refs, onKeyDown } = useRovingTabs(TABS, tab, setTab);
 
   return (
     <div className="min-h-screen relative overflow-hidden flex flex-col" style={{ backgroundColor: '#1E1535' }}>
@@ -55,55 +40,67 @@ export default function ArcadeSanctuary() {
 
       <SanctuaryHeader sanctuary="arcade" textColor="text-[#F0E6FF]" />
 
-      <main id="main" className="flex-1 pt-20 pb-24 px-4 sm:px-8 max-w-2xl mx-auto w-full">
+      <main id="main" className="flex-1 pt-20 pb-12 px-4 sm:px-8 max-w-2xl mx-auto w-full">
         <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            role="tabpanel"
-            id={`arcade-panel-${tab}`}
-            aria-labelledby={`arcade-tab-${tab}`}
-            initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reduceMotion ? 0.15 : 0.4 }}
-          >
-            <h1 className="text-[#C084FC] font-light text-sm tracking-widest uppercase mb-8">
-              {TAB_TITLES[tab]}
-            </h1>
-            {tab === 'memory' && <MemoryGame />}
-            {tab === 'words' && <WordAssociation />}
-            {tab === 'colors' && <ColorSort />}
-            {tab === 'focus' && <FocusTimer />}
-            {tab === 'curiosity' && <Curiosity />}
-          </motion.div>
+          {!need && (
+            <motion.div
+              key="chooser"
+              initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0.15 : 0.4 }}
+              className="flex flex-col gap-6 pt-4"
+            >
+              <h1
+                className="text-[#F0E6FF] text-2xl sm:text-3xl font-light leading-snug"
+                style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
+              >
+                give me something else to think about
+              </h1>
+              <p className="text-[#F0E6FF]/70 text-sm font-light max-w-md">
+                you can stop whenever you want. nothing needs to happen next.
+              </p>
+              <div className="flex flex-col gap-3 mt-2">
+                {NEEDS.map(item => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setNeed(item.id)}
+                    className="text-left rounded-2xl px-5 py-4 border border-[#C084FC]/30 hover:border-[#C084FC]/70 hover:bg-[#C084FC]/10 transition-colors duration-300"
+                  >
+                    <span className="block text-[#F0E6FF] text-sm font-light">{item.label}</span>
+                    <span className="block text-[#F0E6FF]/55 text-xs mt-1">{item.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {need && (
+            <motion.div
+              key={need}
+              initial={{ opacity: 0, y: reduceMotion ? 0 : 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0.15 : 0.4 }}
+            >
+              <h1 className="sr-only">
+                {need === 'patterned' ? 'something patterned' : need === 'words' ? 'something with words' : 'something simple'}
+              </h1>
+              {need === 'patterned' && <MemoryGame />}
+              {need === 'words' && <WordAssociation />}
+              {need === 'simple' && <ColorSort />}
+              <button
+                type="button"
+                onClick={() => setNeed(null)}
+                className="mt-10 text-[#F0E6FF]/70 text-xs tracking-wide"
+              >
+                something else
+              </button>
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
-
-      <div
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-1 bg-[#2D2060]/90 backdrop-blur-md rounded-full px-3 py-2"
-        role="tablist"
-        aria-label="Arcade activities"
-      >
-        {TABS.map((key, index) => (
-          <button
-            key={key}
-            ref={el => { refs.current[index] = el; }}
-            type="button"
-            role="tab"
-            id={`arcade-tab-${key}`}
-            aria-selected={tab === key}
-            aria-controls={`arcade-panel-${key}`}
-            tabIndex={tab === key ? 0 : -1}
-            onClick={() => setTab(key)}
-            onKeyDown={e => onKeyDown(e, index)}
-            className={`px-4 py-1.5 rounded-full text-xs font-light tracking-wide transition-all duration-300 ${
-              tab === key ? 'bg-[#C084FC] text-white' : 'text-[#F0E6FF]/80 hover:text-[#F0E6FF]'
-            }`}
-          >
-            {TAB_LABELS[key]}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

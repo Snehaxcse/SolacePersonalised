@@ -19,6 +19,7 @@ interface Props {
   onBgTexture: (t: BgTexture) => void;
   releasing: boolean;
   onLetItGo: () => void;
+  onFinish: () => void;
   aiActionLoading: boolean;
   onAskSolace: () => void;
   onAddSomething: () => void;
@@ -36,7 +37,7 @@ export default function StudioToolbar(props: Props) {
   const {
     toolbarOpacity, brush, onBrush, brushSize, onBrushSize, color, onColor,
     historyLen, onUndo, canvasBg, onCanvasBg, bgTexture, onBgTexture,
-    releasing, onLetItGo, aiActionLoading, onAskSolace, onAddSomething,
+    releasing, onLetItGo, onFinish, aiActionLoading, onAskSolace, onAddSomething,
     onSave, replaying, onReplay, onOpenGallery, whisperMode, onToggleWhisper,
     convoOpen, onToggleConvo,
   } = props;
@@ -47,7 +48,7 @@ export default function StudioToolbar(props: Props) {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.6, duration: 0.6 }}
-        className={`fixed left-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 ${toolbarOpacity}`}
+        className={`fixed left-2 sm:left-4 bottom-3 sm:bottom-auto top-auto sm:top-1/2 translate-y-0 sm:-translate-y-1/2 z-20 flex flex-row sm:flex-col gap-2 max-w-[calc(100vw-5.5rem)] sm:max-w-none overflow-x-auto sm:overflow-visible ${toolbarOpacity}`}
         aria-label="Drawing tools"
       >
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 flex flex-col gap-1 shadow-sm" role="group" aria-label="Brush">
@@ -97,7 +98,7 @@ export default function StudioToolbar(props: Props) {
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.8, duration: 0.6 }}
-        className={`fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2 ${toolbarOpacity}`}
+        className={`fixed right-2 sm:right-4 top-20 sm:top-1/2 translate-y-0 sm:-translate-y-1/2 z-20 flex flex-col gap-2 max-h-[55vh] sm:max-h-none overflow-y-auto ${toolbarOpacity}`}
         aria-label="Studio actions"
       >
         <MoodPalette canvasBg={canvasBg} onChange={onCanvasBg} />
@@ -106,10 +107,19 @@ export default function StudioToolbar(props: Props) {
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-2 flex flex-col gap-1.5 shadow-sm">
           <button
             type="button"
+            onClick={onFinish}
+            disabled={historyLen === 0 || releasing}
+            aria-label="Finish this drawing"
+            className="text-[10px] text-[#6B4226] hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1 disabled:opacity-40"
+          >
+            I'm done
+          </button>
+          <button
+            type="button"
             onClick={onLetItGo}
-            disabled={releasing}
-            aria-label="Let the drawing go and clear the canvas"
-            className="text-[10px] text-[#6B4226] hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1"
+            disabled={releasing || historyLen === 0}
+            aria-label="Let the drawing go"
+            className="text-[10px] text-[#6B4226] hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1 disabled:opacity-40"
           >
             let it go
           </button>
@@ -119,7 +129,7 @@ export default function StudioToolbar(props: Props) {
             disabled={aiActionLoading}
             className="text-[10px] text-[#6B4226] hover:text-[#C4622D] transition-colors duration-300 tracking-wide py-1 disabled:opacity-40"
           >
-            ask Solace
+            reflect
           </button>
           <button
             type="button"

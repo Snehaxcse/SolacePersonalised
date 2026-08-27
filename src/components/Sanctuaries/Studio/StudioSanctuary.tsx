@@ -1,21 +1,26 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import SanctuaryHeader from '../../shared/SanctuaryHeader';
 import { getStudioSuggestion, getAIDrawShape, type AIShapeResult } from '../../../utils/claudeService';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 import { useAiConsent } from '../../../context/AiConsentContext';
 import { isAiEnabled } from '../../../utils/aiConsent';
+import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
 import { useStudioCanvas } from './useStudioCanvas';
 import StudioCanvas from './StudioCanvas';
 import StudioToolbar from './StudioToolbar';
 import StudioGallery, { useStudioGallery } from './StudioGallery';
 import StudioCompanion from './StudioCompanion';
 import StudioWhisper from './StudioWhisper';
+import StudioRitual from './StudioRitual';
 import type { ConvoMessage } from './studioTypes';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 export default function StudioSanctuary() {
+  const navigate = useNavigate();
   const { requestConsent } = useAiConsent();
+  const reduceMotion = usePrefersReducedMotion();
   const [isFirstVisit] = useLocalStorage<boolean>('solace_studio_first_visit', true);
   const [, setFirstVisitDone] = useLocalStorage<boolean>('solace_studio_first_visit', true);
 
@@ -32,18 +37,46 @@ export default function StudioSanctuary() {
   const [pendingAdd, setPendingAdd] = useState<AIShapeResult | null>(null);
   const [aiActionLoading, setAiActionLoading] = useState(false);
   const [liveMessage, setLiveMessage] = useState('');
+  const [ritualOpen, setRitualOpen] = useState(false);
+  const [confirmRelease, setConfirmRelease] = useState(false);
+  const [satWithIt, setSatWithIt] = useState(false);
   const pendingRef = useRef<HTMLDivElement>(null);
   useFocusTrap(Boolean(pendingAdd), pendingRef, () => setPendingAdd(null));
 
+  useEffect(() => {
+    if (canvas.historyLen === 0 || canvas.isDrawing || canvas.releasing || satWithIt) {
+      if (canvas.isDrawing) {
+        setRitualOpen(false);
+        setSatWithIt(false);
+      } else if (canvas.historyLen === 0) {
+        setRitualOpen(false);
+      }
+      return;
+    }
+    const timer = window.setTimeout(() => setRitualOpen(true), 1400);
+    return () => window.clearTimeout(timer);
+  }, [canvas.historyLen, canvas.isDrawing, canvas.releasing, satWithIt]);
+
+  useEffect(() => {
+    if (canvas.historyLen === 0) {
+      setSatWithIt(false);
+      setConfirmRelease(false);
+    }
+  }, [canvas.historyLen]);
+
   const askSolace = async () => {
     await requestConsent({ force: true });
-    if (!isAiEnabled()) return;
+    if (!isAiEnabled()) {
+      setLiveMessage('Reflection stays optional. Solace will wait until AI is allowed.');
+      return;
+    }
     setAiActionLoading(true);
     const text = await getStudioSuggestion(canvas.getDominantColors());
     setAiActionLoading(false);
     setSuggestion(text);
     setShowSuggestion(true);
-    setTimeout(() => setShowSuggestion(false), 6000);
+    setRitualOpen(false);
+    setTimeout(() => setShowSuggestion(false), 8000);
   };
 
   const offerAiAdd = async () => {
@@ -57,6 +90,13 @@ export default function StudioSanctuary() {
     if (result) setPendingAdd(result);
   };
 
+  const keepDrawing = () => {
+    const ok = gallery.saveDrawing(canvas.canvasRef.current, canvas.canvasBg);
+    setLiveMessage(ok ? 'Kept in your gallery, and downloaded.' : 'Gallery is full. Remove a piece to make room.');
+    setRitualOpen(false);
+    setSatWithIt(true);
+  };
+
   const toolbarOpacity = whisperMode ? 'opacity-20 hover:opacity-100 focus-within:opacity-100 transition-opacity duration-500' : '';
 
   return (
@@ -65,6 +105,12 @@ export default function StudioSanctuary() {
       <main id="main">
         <h1 className="sr-only">the studio</h1>
         <p className="sr-only" aria-live="polite">{liveMessage}</p>
+
+        {isFirstVisit && (
+          <p className="fixed top-16 left-1/2 -translate-x-1/2 z-20 px-4 text-[#6B4226]/70 text-xs font-light text-center tracking-wide">
+            you don't have to make sense of it.
+          </p>
+        )}
 
       <StudioCanvas
         canvasRef={canvas.canvasRef}
@@ -91,14 +137,12 @@ export default function StudioSanctuary() {
         bgTexture={canvas.bgTexture}
         onBgTexture={canvas.setBgTexture}
         releasing={canvas.releasing}
-        onLetItGo={canvas.letItGo}
+        onLetItGo={() => setConfirmRelease(true)}
+        onFinish={() => setRitualOpen(true)}
         aiActionLoading={aiActionLoading}
         onAskSolace={askSolace}
         onAddSomething={offerAiAdd}
-        onSave={() => {
-          const ok = gallery.saveDrawing(canvas.canvasRef.current, canvas.canvasBg);
-          setLiveMessage(ok ? 'Saved to your gallery and downloaded.' : 'Gallery is full. Remove a piece to make room.');
-        }}
+        onSave={keepDrawing}
         replaying={canvas.replaying}
         onReplay={canvas.replay}
         onOpenGallery={() => gallery.setShowGallery(true)}
@@ -115,11 +159,30 @@ export default function StudioSanctuary() {
         latestMessage={messages[messages.length - 1]}
       />
 
+      <StudioRitual
+        open={ritualOpen && !canvas.releasing && !pendingAdd && !showSuggestion}
+        confirmRelease={confirmRelease}
+        reduceMotion={reduceMotion}
+        aiLoading={aiActionLoading}
+        onKeep={keepDrawing}
+        onSit={() => { setRitualOpen(false); setSatWithIt(true); }}
+        onReflect={askSolace}
+        onTalk={() => navigate('/companion')}
+        onRequestRelease={() => setConfirmRelease(true)}
+        onCancelRelease={() => setConfirmRelease(false)}
+        onConfirmRelease={() => {
+          setConfirmRelease(false);
+          setRitualOpen(false);
+          canvas.letItGo({ reduceMotion });
+          setLiveMessage('Released.');
+        }}
+      />
+
       <AnimatePresence>
         {canvas.replaying && (
           <motion.div
             className="fixed top-20 left-1/2 -translate-x-1/2 z-40 px-4 py-2 bg-white/70 backdrop-blur-sm rounded-full"
-            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0, y: reduceMotion ? 0 : -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
           >
             <p className="text-[#6B4226] text-xs tracking-widest">replaying...</p>
           </motion.div>
@@ -130,11 +193,11 @@ export default function StudioSanctuary() {
         {canvas.releasing && (
           <motion.div
             className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30"
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.6 }}
+            initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0.15 : 0.6 }}
           >
             <p className="text-[#6B4226] text-sm font-light tracking-widest italic" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
-              released.
+              nothing needs to happen next.
             </p>
           </motion.div>
         )}
@@ -144,8 +207,8 @@ export default function StudioSanctuary() {
         {showSuggestion && suggestion && !convoOpen && (
           <motion.div
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 max-w-xs sm:max-w-sm px-5 py-3 bg-white/80 backdrop-blur-md rounded-2xl shadow-md"
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, y: reduceMotion ? 0 : 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
+            transition={{ duration: reduceMotion ? 0.15 : 0.5 }}
             role="status"
             aria-live="polite"
           >
@@ -162,7 +225,7 @@ export default function StudioSanctuary() {
             ref={pendingRef}
             tabIndex={-1}
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-md max-w-xs text-center outline-none"
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0, y: reduceMotion ? 0 : 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             role="dialog"
             aria-modal="true"
             aria-labelledby="ai-add-title"

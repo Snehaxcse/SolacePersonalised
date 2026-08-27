@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
+import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
 
 function generateColorTiles(baseHue: number) {
   const tiles = Array.from({ length: 8 }, (_, i) => ({
@@ -17,6 +18,7 @@ function shadeLabel(order: number) {
 }
 
 export default function ColorSort() {
+  const reduceMotion = usePrefersReducedMotion();
   const [hue] = useState(() => Math.floor(Math.random() * 360));
   const [tiles, setTiles] = useState(() => generateColorTiles(hue));
   const [solved, setSolved] = useState(false);
@@ -71,12 +73,12 @@ export default function ColorSort() {
               type="button"
               aria-pressed={selected === idx}
               aria-label={`${shadeLabel(tile.order)}, position ${idx + 1} of ${tiles.length}`}
-              className={`w-12 h-16 rounded-xl ${selected === idx ? 'ring-2 ring-[#F0E6FF] ring-offset-2 ring-offset-[#1E1535]' : ''}`}
+              className={`w-14 h-16 sm:w-12 sm:h-16 rounded-xl ${selected === idx ? 'ring-2 ring-[#F0E6FF] ring-offset-2 ring-offset-[#1E1535]' : ''}`}
               style={{ backgroundColor: tile.hsl }}
               onClick={() => setSelected(idx)}
               onKeyDown={e => onTileKey(e, idx)}
-              animate={solved ? { scale: [1, 1.05, 1] } : {}}
-              transition={solved ? { duration: 0.4, delay: idx * 0.05 } : {}}
+              animate={solved && !reduceMotion ? { scale: [1, 1.05, 1] } : {}}
+              transition={solved && !reduceMotion ? { duration: 0.4, delay: idx * 0.05 } : { duration: 0 }}
             />
           </li>
         ))}
@@ -102,9 +104,9 @@ export default function ColorSort() {
       <div aria-live="polite" className="min-h-[3rem] text-center">
         {solved && (
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
-            <p className="text-[#F0E6FF]/80 text-xs italic mb-3">just right.</p>
+            <p className="text-[#F0E6FF]/80 text-xs italic mb-3">there.</p>
             <button type="button" onClick={newGame} className="text-xs text-[#C084FC] tracking-wide">
-              new color
+              another color
             </button>
           </motion.div>
         )}

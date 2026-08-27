@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 
+/** Kept for compatibility. Hidden from Arcade entry in Phase 4B. Key solace_arcade_streak is left untouched. */
 export default function FocusTimer() {
   const [mode, setMode] = useState<'focus' | 'rest'>('focus');
   const [seconds, setSeconds] = useState(25 * 60);

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getRandomCuriosity } from '../../../utils/claudeService';
 import { useAiConsent } from '../../../context/AiConsentContext';
 
+/** Kept for compatibility. Hidden from Arcade entry in Phase 4B. */
 export default function Curiosity() {
   const { requestConsent } = useAiConsent();
   const [fact, setFact] = useState('');

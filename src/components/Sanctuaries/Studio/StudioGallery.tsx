@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Trash2, X } from 'lucide-react';
 import { useLocalStorage } from '../../../hooks/useLocalStorage';
 import type { GalleryEntry } from './studioTypes';
-import { MAX_GALLERY } from './studioUtils';
+import { canvasToGalleryDataURL, MAX_GALLERY } from './studioUtils';
 import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 interface Props {
@@ -24,22 +24,33 @@ export function useStudioGallery() {
       return false;
     }
 
-    const dataURL = canvas.toDataURL('image/png');
     const now = new Date();
     const filename = `solace-studio-${now.getDate()}-${now.getMonth() + 1}-${now.getFullYear()}.png`;
 
-    const a = document.createElement('a');
-    a.href = dataURL;
-    a.download = filename;
-    a.click();
+    try {
+      const downloadURL = canvas.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = downloadURL;
+      a.download = filename;
+      a.click();
+    } catch {
+      // download is optional; gallery save can still proceed
+    }
 
     const entry: GalleryEntry = {
       id: `${Date.now()}`,
-      dataURL,
+      dataURL: canvasToGalleryDataURL(canvas, moodColor ?? '#F5ECD7'),
       date: now.toLocaleDateString(),
       moodColor,
     };
-    setGallery(prev => [...prev.slice(-(MAX_GALLERY - 1)), entry]);
+    const next = [...gallery, entry];
+    try {
+      window.localStorage.setItem('solace_studio_gallery', JSON.stringify(next));
+    } catch {
+      setGalleryFull(true);
+      return false;
+    }
+    setGallery(next);
     return true;
   };
 
@@ -83,7 +94,7 @@ export default function StudioGallery({
             className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-md max-w-xs text-center"
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
           >
-            <p className="text-[#6B4226] text-xs font-light mb-2">your gallery is full (50 pieces). remove one to make room.</p>
+            <p className="text-[#6B4226] text-xs font-light mb-2">your gallery is full. remove a piece if you want to keep another.</p>
             <button type="button" onClick={() => { onGalleryFullChange(false); onOpenChange(true); }} className="text-[#C4622D] text-xs underline">open gallery</button>
           </motion.div>
         )}
@@ -119,9 +130,9 @@ export default function StudioGallery({
 
               <div className="flex-1 overflow-y-auto p-5">
                 {gallery.length === 0 ? (
-                  <p className="text-[#6B4226]/70 text-sm italic text-center py-12">nothing saved yet. something worth keeping will find its way here.</p>
+                  <p className="text-[#6B4226]/70 text-sm italic text-center py-12">nothing kept yet.</p>
                 ) : (
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {gallery.map(entry => (
                       <div key={entry.id} className="flex flex-col gap-1">
                         <button

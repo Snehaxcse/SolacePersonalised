@@ -40,7 +40,7 @@ export default function StudioCanvas({
         }}
       />
       <div
-        className="absolute inset-0 pt-16 z-0 pointer-events-none"
+        className="absolute inset-0 pt-16 pb-20 sm:pb-0 z-0 pointer-events-none"
         style={getBgStyle(bgTexture, canvasBg)}
       >
         {bgTexture === 'starry' && starryDots.map((d, i) => (
@@ -48,7 +48,7 @@ export default function StudioCanvas({
             style={{ left: d.left, top: d.top, width: d.size, height: d.size, opacity: d.opacity }} />
         ))}
       </div>
-      <div className="absolute inset-0 pt-16 z-10">
+      <div className="absolute inset-0 pt-16 pb-20 sm:pb-0 z-10">
         <canvas
           ref={canvasRef}
           className={`w-full h-full touch-none ${cursorStyle}`}

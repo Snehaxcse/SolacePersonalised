@@ -30,7 +30,7 @@ export async function getStudioSuggestion(colorInfo: string): Promise<string> {
   try {
     return await invokeClaude({ action: 'studio_suggestion', colorInfo });
   } catch {
-    return 'I notice something tender taking shape here — perhaps a soft edge of light finding its way through.';
+    return "The marks are there. You don't have to make sense of them.";
   }
 }
 
@@ -60,7 +60,7 @@ export async function getJournalReflection(journalText: string): Promise<string>
   try {
     return await invokeClaude({ action: 'journal_reflection', journalText });
   } catch {
-    return 'I notice how honestly you hold what is yours.';
+    return 'I heard what you wrote. You can leave it there.';
   }
 }
 

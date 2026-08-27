@@ -36,7 +36,35 @@ export const BG_TEXTURES: { key: BgTexture; label: string; name: string }[] = [
 ];
 
 export const MAX_HISTORY = 30;
+/** Cap for gallery entries. Existing pieces are never silently deleted. */
 export const MAX_GALLERY = 50;
+const GALLERY_MAX_EDGE = 900;
+const GALLERY_JPEG_QUALITY = 0.72;
+
+/**
+ * Gallery storage key: solace_studio_gallery
+ * Schema: { id, dataURL, date, moodColor }[]
+ * New saves use compressed JPEG data URLs. Existing PNG data URLs are left as-is.
+ */
+export function canvasToGalleryDataURL(canvas: HTMLCanvasElement, paperColor = '#F5ECD7'): string {
+  const max = GALLERY_MAX_EDGE;
+  const scale = Math.min(1, max / Math.max(canvas.width, canvas.height, 1));
+  const width = Math.max(1, Math.round(canvas.width * scale));
+  const height = Math.max(1, Math.round(canvas.height * scale));
+  try {
+    const tmp = document.createElement('canvas');
+    tmp.width = width;
+    tmp.height = height;
+    const ctx = tmp.getContext('2d');
+    if (!ctx) return canvas.toDataURL('image/jpeg', GALLERY_JPEG_QUALITY);
+    ctx.fillStyle = paperColor;
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(canvas, 0, 0, width, height);
+    return tmp.toDataURL('image/jpeg', GALLERY_JPEG_QUALITY);
+  } catch {
+    return canvas.toDataURL('image/png');
+  }
+}
 
 export function getPointerPos(e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) {
   const rect = canvas.getBoundingClientRect();
