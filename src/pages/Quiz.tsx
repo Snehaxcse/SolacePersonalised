@@ -214,7 +214,7 @@ export default function Quiz() {
             type="button"
             onClick={goNext}
             disabled={answers[currentQ] === null || completing}
-            className="px-10 py-3 rounded-full border border-white/30 text-white text-sm font-light tracking-widest uppercase hover:border-white/60 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="min-h-11 px-10 py-3 rounded-full border border-white/30 text-white text-sm font-light tracking-widest uppercase hover:border-white/60 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {currentQ === questions.length - 1 ? 'Continue' : 'Next'}
           </button>

@@ -60,12 +60,12 @@ export default function Landing() {
         />
       )}
 
-      <main id="main" className="relative z-10 flex flex-col items-center text-center px-8 max-w-md">
+      <main id="main" className="relative z-10 flex flex-col items-center text-center px-5 sm:px-8 max-w-md w-full">
         <motion.h1
           initial={enter ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduceMotion ? 0 : 0.8, delay: reduceMotion ? 0 : 0.2 }}
-          className="text-7xl sm:text-8xl font-light text-white tracking-tight mb-3"
+          className="text-6xl sm:text-8xl font-light text-white tracking-tight mb-3"
           style={{ fontFamily: 'Cormorant Garamond, Georgia, serif', fontWeight: 300 }}
         >
           Solace
@@ -99,7 +99,7 @@ export default function Landing() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: reduceMotion ? 0 : 0.8, delay: reduceMotion ? 0 : 1 }}
                   onClick={() => navigate(sanctuaryRoute(suggested))}
-                  className="relative px-10 py-3.5 rounded-full border border-white/30 text-white text-sm font-light tracking-widest uppercase hover:border-white/60 hover:text-white transition-all duration-500"
+                  className="relative min-h-12 px-8 sm:px-10 py-3.5 rounded-full border border-white/40 bg-white/5 text-white text-sm font-light tracking-widest uppercase hover:border-white/70 hover:bg-white/10 transition-all duration-500"
                   style={{ letterSpacing: '0.15em' }}
                   whileHover={reduceMotion ? undefined : { scale: 1.02 }}
                   whileTap={reduceMotion ? undefined : { scale: 0.98 }}
@@ -112,7 +112,7 @@ export default function Landing() {
                   animate={{ opacity: 1 }}
                   transition={{ duration: reduceMotion ? 0 : 0.8, delay: reduceMotion ? 0 : 1.2 }}
                   onClick={() => setChoosing(true)}
-                  className="mt-5 text-xs font-light text-white/70 hover:text-white tracking-wide transition-colors duration-300 rounded-sm"
+                  className="mt-5 min-h-10 text-xs font-light text-white/75 hover:text-white tracking-wide transition-colors duration-300 rounded-sm"
                 >
                   I need something else today
                 </motion.button>
@@ -128,7 +128,7 @@ export default function Landing() {
                     key={type}
                     type="button"
                     onClick={() => navigate(sanctuaryRoute(type))}
-                    className="rounded-2xl px-4 py-3 border border-white/25 text-white hover:border-white/50 hover:bg-white/5 transition-colors duration-300"
+                    className="rounded-2xl px-4 py-3.5 border border-white/25 text-white hover:border-white/50 hover:bg-white/5 transition-colors duration-300"
                   >
                     <span className="block text-sm font-light">{SANCTUARY_NEEDS[type]}</span>
                     <span className="block text-[10px] text-white/65 mt-1 tracking-wide">
@@ -146,7 +146,7 @@ export default function Landing() {
               animate={{ opacity: 1 }}
               transition={{ duration: reduceMotion ? 0 : 1, delay: reduceMotion ? 0 : 1.5 }}
               onClick={() => navigate('/quiz')}
-              className="mt-8 text-[11px] font-light text-white/65 hover:text-white tracking-wide transition-colors duration-300 rounded-sm"
+              className="mt-8 text-[11px] font-light text-white/65 hover:text-white tracking-wide transition-colors duration-300 rounded-sm min-h-8"
             >
               take the questions again
             </motion.button>
@@ -156,7 +156,7 @@ export default function Landing() {
               animate={{ opacity: 1 }}
               transition={{ duration: reduceMotion ? 0 : 1, delay: reduceMotion ? 0 : 1.7 }}
               onClick={() => navigate('/companion')}
-              className="mt-4 text-[11px] font-light text-white/65 hover:text-white tracking-wide transition-colors duration-300 rounded-sm"
+              className="mt-5 min-h-10 px-5 py-2 rounded-full border border-white/25 text-[11px] font-light text-white/80 hover:text-white hover:border-white/50 tracking-wide transition-colors duration-300"
             >
               sit with the companion
             </motion.button>
@@ -178,7 +178,7 @@ export default function Landing() {
               transition={{ duration: reduceMotion ? 0 : 0.8, delay: reduceMotion ? 0 : 1.0 }}
               className="text-sm font-light text-white/70 mb-14 tracking-wide"
             >
-              a space built around you.
+              a quiet place, depending on what you need.
             </motion.p>
             <motion.button
               type="button"
@@ -186,7 +186,7 @@ export default function Landing() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: reduceMotion ? 0 : 0.8, delay: reduceMotion ? 0 : 1.4 }}
               onClick={() => navigate('/quiz')}
-              className="relative px-10 py-3.5 rounded-full border border-white/30 text-white text-sm font-light tracking-widest uppercase hover:border-white/60 group"
+              className="relative min-h-12 px-8 sm:px-10 py-3.5 rounded-full border border-white/40 bg-white/5 text-white text-sm font-light tracking-widest uppercase hover:border-white/70 hover:bg-white/10 group"
               style={{ letterSpacing: '0.15em' }}
               whileHover={reduceMotion ? undefined : { scale: 1.02 }}
               whileTap={reduceMotion ? undefined : { scale: 0.98 }}
@@ -199,7 +199,7 @@ export default function Landing() {
               animate={{ opacity: 1 }}
               transition={{ duration: reduceMotion ? 0 : 0.8, delay: reduceMotion ? 0 : 1.7 }}
               onClick={() => navigate('/companion')}
-              className="mt-6 text-[11px] font-light text-white/65 hover:text-white tracking-wide transition-colors duration-300 rounded-sm"
+              className="mt-6 min-h-10 px-5 py-2 rounded-full border border-white/25 text-[11px] font-light text-white/80 hover:text-white hover:border-white/50 tracking-wide transition-colors duration-300"
             >
               sit with the companion
             </motion.button>

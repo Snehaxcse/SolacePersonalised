@@ -39,7 +39,7 @@ export default function SupportDialog({ open, onClose }: Props) {
             aria-labelledby={titleId}
             aria-describedby={descId}
             tabIndex={-1}
-            className="relative w-full max-w-md rounded-3xl px-6 py-7 outline-none"
+            className="relative w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl px-5 sm:px-6 py-6 sm:py-7 outline-none"
             style={{ backgroundColor: '#F5ECD7' }}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

@@ -303,7 +303,7 @@ export default function GardenSanctuary() {
       <main id="main" className="flex-1 pt-20 pb-8 px-4 sm:px-8 flex flex-col lg:flex-row gap-8 max-w-5xl mx-auto w-full">
         <div className="flex flex-col items-center gap-4 lg:w-1/2">
           <div className="relative flex flex-col items-center">
-            <PlantSVG stage={displayStage} drooping={softDroop} reduceMotion={reduceMotion} />
+            <PlantSVG key={displayStage} stage={displayStage} drooping={softDroop} reduceMotion={reduceMotion} />
             <h1 className="sr-only">the garden</h1>
             <p className="text-[#5C8A5E] text-sm tracking-wide text-center mt-2">
               {growthStatus}
@@ -336,14 +336,14 @@ export default function GardenSanctuary() {
         </div>
 
         <div className="flex flex-col gap-6 lg:w-1/2">
-          <div className="bg-white/50 rounded-2xl p-5">
+          <div className="bg-white/50 rounded-2xl p-5 sm:p-6 shadow-sm">
             <label htmlFor="garden-stone" className="block text-[#3d6b40] text-sm font-light mb-1">
               leave something here.
             </label>
             <p id="garden-stone-hint" className="text-[#6B4F16] text-xs font-light mb-3 leading-5">
               something you noticed. something that hurt. something you want to remember. something small that was okay. something you're carrying.
             </p>
-            <div className="flex gap-2">
+            <div className="flex items-end gap-2">
               <input
                 id="garden-stone"
                 value={stoneInput}
@@ -351,16 +351,19 @@ export default function GardenSanctuary() {
                 onKeyDown={e => e.key === 'Enter' && addStone()}
                 placeholder="whatever is true right now"
                 aria-describedby="garden-stone-hint"
-                className="flex-1 bg-transparent text-[#3d6b40] text-sm font-light outline-none placeholder-[#5C8A5E]/55 border-b border-[#5C8A5E]/30 pb-1"
+                className="flex-1 min-w-0 bg-transparent text-[#3d6b40] text-sm font-light outline-none placeholder-[#5C8A5E]/55 border-b border-[#5C8A5E]/30 pb-1.5"
               />
               <button
                 type="button"
                 onClick={addStone}
-                className="text-[#3d6b40] transition-colors duration-300 text-xs tracking-wide"
+                className="shrink-0 min-h-9 px-3.5 py-1.5 rounded-full border border-[#5C8A5E]/35 text-[#3d6b40] text-xs tracking-wide"
               >
                 leave it
               </button>
             </div>
+            {safeStones.length === 0 && (
+              <p className="text-[#6B4F16] text-xs font-light mt-3">nothing left here yet. that's okay.</p>
+            )}
           </div>
 
           {safeStones.length > 0 && (

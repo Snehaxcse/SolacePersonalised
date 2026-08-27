@@ -66,14 +66,14 @@ export default function ColorSort() {
       <p className="text-[#F0E6FF]/75 text-xs tracking-wide text-center max-w-sm">
         Arrange from darkest to lightest. Select a tile, then move it, or use the arrow keys.
       </p>
-      <ul className="flex gap-2 flex-wrap justify-center list-none p-0 m-0" aria-label="Color tiles">
+      <ul className="flex gap-1.5 sm:gap-2 flex-wrap justify-center list-none p-0 m-0" aria-label="Color tiles">
         {tiles.map((tile, idx) => (
           <li key={tile.id}>
             <motion.button
               type="button"
               aria-pressed={selected === idx}
               aria-label={`${shadeLabel(tile.order)}, position ${idx + 1} of ${tiles.length}`}
-              className={`w-14 h-16 sm:w-12 sm:h-16 rounded-xl ${selected === idx ? 'ring-2 ring-[#F0E6FF] ring-offset-2 ring-offset-[#1E1535]' : ''}`}
+              className={`w-8 h-11 sm:w-12 sm:h-16 rounded-xl ${selected === idx ? 'ring-2 ring-[#F0E6FF] ring-offset-2 ring-offset-[#1E1535]' : ''}`}
               style={{ backgroundColor: tile.hsl }}
               onClick={() => setSelected(idx)}
               onKeyDown={e => onTileKey(e, idx)}
@@ -83,7 +83,7 @@ export default function ColorSort() {
           </li>
         ))}
       </ul>
-      <div className="flex gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
         <button
           type="button"
           onClick={() => selected !== null && move(selected, selected - 1)}

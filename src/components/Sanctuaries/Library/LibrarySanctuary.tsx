@@ -324,6 +324,15 @@ export default function LibrarySanctuary() {
                 </div>
 
                 <div className="flex-1 flex flex-col min-w-0">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeId ?? 'blank'}
+                      initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
+                      transition={{ duration: reduceMotion ? 0 : 0.25 }}
+                      className="flex flex-col"
+                    >
                   <label htmlFor="library-journal" className="sr-only">
                     Journal page
                   </label>
@@ -339,19 +348,19 @@ export default function LibrarySanctuary() {
                   <p id="journal-privacy-note" className="text-[#F5F0E8]/60 text-[11px] font-light leading-5 mb-4">
                     Writing stays here unless you choose to reflect or export. Reflection is optional and not medical advice.
                   </p>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <button
                       type="button"
                       onClick={handleReflect}
                       disabled={reflectLoading || !draft.trim()}
-                      className="text-xs text-[#C9A84C] tracking-widest uppercase disabled:opacity-40"
+                      className="min-h-9 px-3 py-1.5 rounded-full border border-[#C9A84C]/40 text-xs text-[#C9A84C] tracking-widest uppercase disabled:opacity-40"
                     >
                       {reflectLoading ? 'listening...' : 'reflect'}
                     </button>
                     <button
                       type="button"
                       onClick={() => navigate('/companion')}
-                      className="text-xs text-[#F5F0E8]/75 tracking-wide"
+                      className="min-h-9 px-3 py-1.5 rounded-full border border-[#F5F0E8]/20 text-xs text-[#F5F0E8]/80 tracking-wide"
                     >
                       sit with this
                     </button>
@@ -359,22 +368,22 @@ export default function LibrarySanctuary() {
                       type="button"
                       onClick={exportJournal}
                       disabled={entries.length === 0 && !draft.trim()}
-                      className="text-xs text-[#F5F0E8]/75 tracking-wide disabled:opacity-40"
+                      className="min-h-9 px-3 py-1.5 rounded-full border border-[#F5F0E8]/20 text-xs text-[#F5F0E8]/80 tracking-wide disabled:opacity-40"
                     >
                       export
                     </button>
                     {activeEntry && (
                       deleteId === activeEntry.id ? (
-                        <span className="flex items-center gap-3 text-xs">
-                          <button type="button" onClick={() => deleteEntry(activeEntry.id)} className="text-[#E8B4B8]">
+                        <span className="flex items-center gap-2 text-xs">
+                          <button type="button" onClick={() => deleteEntry(activeEntry.id)} className="min-h-9 px-3 py-1.5 rounded-full border border-[#E8B4B8]/40 text-[#E8B4B8]">
                             delete this page
                           </button>
-                          <button type="button" onClick={() => setDeleteId(null)} className="text-[#F5F0E8]/70">
+                          <button type="button" onClick={() => setDeleteId(null)} className="min-h-9 px-3 py-1.5 text-[#F5F0E8]/70">
                             keep
                           </button>
                         </span>
                       ) : (
-                        <button type="button" onClick={() => setDeleteId(activeEntry.id)} className="text-xs text-[#F5F0E8]/60 tracking-wide">
+                        <button type="button" onClick={() => setDeleteId(activeEntry.id)} className="min-h-9 px-3 py-1.5 text-xs text-[#F5F0E8]/60 tracking-wide">
                           delete page
                         </button>
                       )
@@ -396,6 +405,8 @@ export default function LibrarySanctuary() {
                         {reflection}
                       </motion.p>
                     )}
+                  </AnimatePresence>
+                    </motion.div>
                   </AnimatePresence>
                 </div>
               </div>

@@ -66,7 +66,7 @@ export default function MemoryGame() {
   return (
     <div className="flex flex-col items-center gap-4">
       <p className="text-[#F0E6FF]/75 text-xs text-center max-w-xs">
-        Find matching pairs. Each card has a name as well as a color. You can stop whenever you want.
+        Turn two over. Each card has a name as well as a color. You can stop whenever you want.
       </p>
       <div
         className="grid gap-2"

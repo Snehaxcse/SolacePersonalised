@@ -38,7 +38,7 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4"
+        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between gap-2 px-3 sm:px-6 py-3 sm:py-4"
       >
         <button
           type="button"
@@ -48,19 +48,19 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
           aria-haspopup="dialog"
           aria-expanded={switcherOpen}
         >
-          <span className={`font-serif text-base font-light ${textColor} opacity-90`} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
+          <span className={`font-serif text-sm sm:text-base font-light ${textColor} opacity-90`} style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>
             Solace
           </span>
-          <span className={`${textColor} opacity-50`}>/</span>
-          <span className={`text-xs font-light ${textColor} opacity-80 tracking-widest uppercase`}>
+          <span className={`${textColor} opacity-50`} aria-hidden="true">/</span>
+          <span className={`text-[10px] sm:text-xs font-light ${textColor} opacity-80 tracking-wide sm:tracking-widest uppercase truncate max-w-[7.5rem] sm:max-w-none`}>
             {spaceLabel}
           </span>
         </button>
-        <nav className="flex items-center gap-3 sm:gap-4" aria-label="Sanctuary">
+        <nav className="flex items-center gap-2 sm:gap-4 shrink-0" aria-label="Sanctuary">
           <button
             type="button"
             onClick={() => navigate('/companion')}
-            className={`text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 tracking-wide rounded-sm`}
+            className={`text-[11px] sm:text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 tracking-wide rounded-sm min-h-8`}
             aria-label="Solace Companion, an AI conversation"
             aria-current={onCompanion ? 'page' : undefined}
           >
@@ -69,7 +69,7 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
           <button
             type="button"
             onClick={openSettings}
-            className={`text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 tracking-wide rounded-sm`}
+            className={`text-[11px] sm:text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 tracking-wide rounded-sm min-h-8`}
             aria-label={aiLabel}
             aria-haspopup="dialog"
           >
@@ -78,7 +78,7 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
           <button
             type="button"
             onClick={() => setSupportOpen(true)}
-            className={`text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 tracking-wide rounded-sm`}
+            className={`text-[11px] sm:text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 tracking-wide rounded-sm min-h-8`}
             aria-label="Support and urgent help"
             aria-haspopup="dialog"
             aria-expanded={supportOpen}
@@ -88,7 +88,7 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
           <button
             type="button"
             onClick={() => navigate('/')}
-            className={`flex items-center gap-1.5 text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 rounded-sm`}
+            className={`flex items-center gap-1.5 text-[11px] sm:text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 rounded-sm min-h-8`}
             aria-label="return home"
           >
             <DoorOpen size={14} aria-hidden="true" />

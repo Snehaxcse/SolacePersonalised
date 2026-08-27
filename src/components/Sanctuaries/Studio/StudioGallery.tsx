@@ -18,10 +18,11 @@ export function useStudioGallery() {
   const [gallery, setGallery] = useLocalStorage<GalleryEntry[]>('solace_studio_gallery', []);
   const [showGallery, setShowGallery] = useState(false);
   const [galleryNotice, setGalleryNotice] = useState<'full' | 'quota' | null>(null);
+  const pieces = Array.isArray(gallery) ? gallery : [];
 
   const saveDrawing = (canvas: HTMLCanvasElement | null, moodColor: string | null): GallerySaveResult => {
     if (!canvas) return 'quota';
-    if (gallery.length >= MAX_GALLERY) {
+    if (pieces.length >= MAX_GALLERY) {
       setGalleryNotice('full');
       return 'full';
     }
@@ -53,7 +54,7 @@ export function useStudioGallery() {
       date: now.toLocaleDateString(),
       moodColor,
     };
-    const next = [...gallery, entry];
+    const next = [...pieces, entry];
     try {
       window.localStorage.setItem('solace_studio_gallery', JSON.stringify(next));
     } catch {
@@ -64,7 +65,7 @@ export function useStudioGallery() {
     return 'kept';
   };
 
-  return { gallery, setGallery, showGallery, setShowGallery, galleryNotice, setGalleryNotice, saveDrawing };
+  return { gallery: pieces, setGallery, showGallery, setShowGallery, galleryNotice, setGalleryNotice, saveDrawing };
 }
 
 export default function StudioGallery({
@@ -89,8 +90,10 @@ export default function StudioGallery({
   useFocusTrap(open && !expandedImage, panelRef, () => onOpenChange(false));
   useFocusTrap(Boolean(expandedImage), expandRef, () => setExpandedImage(null));
 
+  const pieces = Array.isArray(gallery) ? gallery : [];
+
   const deleteEntry = (id: string) => {
-    onGalleryChange(prev => prev.filter(e => e.id !== id));
+    onGalleryChange(prev => (Array.isArray(prev) ? prev : []).filter(e => e.id !== id));
     setDeleteConfirm(null);
     if (expandedImage?.id === id) setExpandedImage(null);
   };
@@ -101,7 +104,7 @@ export default function StudioGallery({
         {galleryNotice && (
           <motion.div
             role="status"
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-md max-w-xs text-center"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 mx-4 px-5 py-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-md w-[min(20rem,calc(100vw-2rem))] text-center"
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
           >
             <p className="text-[#6B4226] text-xs font-light mb-2 leading-5">
@@ -132,10 +135,10 @@ export default function StudioGallery({
               style={{ backgroundColor: '#F5ECD7' }}
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-[#C4622D]/10">
+              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[#C4622D]/10">
                 <div>
                   <h2 id={titleId} className="text-[#6B4226] text-base font-light" style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}>your gallery</h2>
-                  <p className="text-[#6B4226]/80 text-xs">{gallery.length} / {MAX_GALLERY} pieces</p>
+                  <p className="text-[#6B4226]/80 text-xs">{pieces.length} / {MAX_GALLERY} pieces</p>
                 </div>
                 <button type="button" onClick={() => onOpenChange(false)} aria-label="Close gallery" className="text-[#6B4226] hover:text-[#C4622D] transition-colors">
                   <X size={16} />
@@ -143,11 +146,11 @@ export default function StudioGallery({
               </div>
 
               <div className="flex-1 overflow-y-auto p-5">
-                {gallery.length === 0 ? (
+                {pieces.length === 0 ? (
                   <p className="text-[#6B4226]/70 text-sm italic text-center py-12">nothing kept yet.</p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {gallery.map(entry => (
+                    {pieces.map(entry => (
                       <div key={entry.id} className="flex flex-col gap-1">
                         <button
                           type="button"

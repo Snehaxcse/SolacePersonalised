@@ -61,7 +61,6 @@ body {
   }
 }
 
-/* Global scrollbar styling */
 ::-webkit-scrollbar {
   width: 4px;
 }
@@ -73,7 +72,6 @@ body {
   border-radius: 2px;
 }
 
-/* Canvas paper texture overlay */
 .paper-texture {
   position: relative;
 }

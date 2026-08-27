@@ -58,15 +58,15 @@ export default function ArcadeSanctuary() {
                 give me something else to think about
               </h1>
               <p className="text-[#F0E6FF]/70 text-sm font-light max-w-md">
-                you can stop whenever you want. nothing needs to happen next.
+                three quiet things in this room. you can stop whenever you want. nothing needs to happen next.
               </p>
-              <div className="flex flex-col gap-3 mt-2">
+              <div className="flex flex-col gap-3 mt-2 rounded-3xl border border-[#C084FC]/15 p-3 sm:p-4">
                 {NEEDS.map(item => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => setNeed(item.id)}
-                    className="text-left rounded-2xl px-5 py-4 border border-[#C084FC]/30 hover:border-[#C084FC]/70 hover:bg-[#C084FC]/10 transition-colors duration-300"
+                    className="text-left rounded-2xl px-5 py-4 border border-[#C084FC]/25 hover:border-[#C084FC]/60 hover:bg-[#C084FC]/10 transition-colors duration-300 min-h-[4.5rem]"
                   >
                     <span className="block text-[#F0E6FF] text-sm font-light">{item.label}</span>
                     <span className="block text-[#F0E6FF]/55 text-xs mt-1">{item.hint}</span>
@@ -93,7 +93,7 @@ export default function ArcadeSanctuary() {
               <button
                 type="button"
                 onClick={() => setNeed(null)}
-                className="mt-10 text-[#F0E6FF]/70 text-xs tracking-wide"
+                className="mt-10 min-h-9 px-4 py-2 rounded-full border border-[#C084FC]/25 text-[#F0E6FF]/75 text-xs tracking-wide"
               >
                 something else
               </button>

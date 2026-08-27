@@ -141,7 +141,7 @@ export default function CompanionExperience() {
       : 'AI stays off until you choose. Talk with me will ask first. Holding never leaves this device.';
 
   return (
-    <div className="flex-1 pt-20 pb-8 px-4 sm:px-8 max-w-xl mx-auto w-full flex flex-col">
+    <div className="flex-1 pt-20 pb-8 px-4 sm:px-8 max-w-xl mx-auto w-full flex flex-col min-h-0">
       <p className="sr-only" aria-live="polite">{live}</p>
       <SupportDialog open={supportOpen} onClose={() => setSupportOpen(false)} />
 
@@ -151,7 +151,7 @@ export default function CompanionExperience() {
             <div>
               <h1
                 id={headingId}
-                className="text-[#F5ECD7] text-4xl sm:text-5xl font-light mb-4"
+                className="text-[#F5ECD7] text-3xl sm:text-5xl font-light mb-4 leading-tight"
                 style={{ fontFamily: 'Cormorant Garamond, Georgia, serif' }}
               >
                 What would feel helpful right now?
@@ -170,7 +170,7 @@ export default function CompanionExperience() {
                     <button
                       type="button"
                       onClick={() => chooseMode(key)}
-                      className="w-full text-left rounded-2xl px-5 py-4 border border-[#F5ECD7]/20 hover:border-[#F5ECD7]/45 hover:bg-white/5 transition-colors"
+                      className="w-full text-left rounded-2xl px-4 sm:px-5 py-4 border border-[#F5ECD7]/20 hover:border-[#F5ECD7]/45 hover:bg-white/5 transition-colors min-h-[4.25rem]"
                     >
                       <span className="block text-[#F5ECD7] text-sm font-light">{meta.title}</span>
                       <span className="block text-[#F5ECD7]/70 text-xs font-light mt-1">{meta.prompt}</span>
@@ -204,7 +204,7 @@ export default function CompanionExperience() {
               <button
                 type="submit"
                 disabled={!draft.trim()}
-                className="mt-4 px-5 py-2.5 rounded-full border border-[#F5ECD7]/30 text-[#F5ECD7] text-xs tracking-wide disabled:opacity-40"
+                className="mt-4 min-h-10 px-5 py-2.5 rounded-full border border-[#F5ECD7]/30 text-[#F5ECD7] text-xs tracking-wide disabled:opacity-40"
               >
                 Just hold this
               </button>
@@ -250,7 +250,7 @@ export default function CompanionExperience() {
                     type="button"
                     aria-pressed={selected}
                     onClick={() => chooseMode(key)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] tracking-wide ${
+                    className={`min-h-9 px-3 py-1.5 rounded-full text-[11px] tracking-wide ${
                       selected
                         ? 'bg-[#F5ECD7] text-[#1a1612]'
                         : 'border border-[#F5ECD7]/30 text-[#F5ECD7]/80'
@@ -289,7 +289,9 @@ export default function CompanionExperience() {
                 </div>
               ))}
               {loading && (
-                <p className="text-[#F5ECD7]/55 text-xs font-light tracking-wide">listening…</p>
+                <p className="text-[#F5ECD7]/55 text-xs font-light tracking-wide" aria-live="polite">
+                  listening…
+                </p>
               )}
               <div ref={endRef} />
             </div>
@@ -307,14 +309,14 @@ export default function CompanionExperience() {
                   <button
                     type="button"
                     onClick={() => setOffer(null)}
-                    className="px-4 py-2 rounded-full border border-[#F5ECD7]/30 text-[#F5ECD7] text-xs"
+                    className="min-h-10 px-4 py-2 rounded-full border border-[#F5ECD7]/30 text-[#F5ECD7] text-xs"
                   >
                     keep talking
                   </button>
                   <button
                     type="button"
                     onClick={() => navigate(SANCTUARIES[offer].route)}
-                    className="px-4 py-2 rounded-full border border-[#F5ECD7]/30 text-[#F5ECD7] text-xs"
+                    className="min-h-10 px-4 py-2 rounded-full border border-[#F5ECD7]/30 text-[#F5ECD7] text-xs"
                   >
                     go to {SANCTUARIES[offer].label}
                   </button>
@@ -357,19 +359,19 @@ export default function CompanionExperience() {
                 placeholder="You can say it plainly."
                 className="w-full bg-transparent text-[#F5ECD7] text-sm font-light leading-7 resize-none outline-none border-b border-[#F5ECD7]/25 pb-3 placeholder-[#F5ECD7]/40"
               />
-              <div className="flex flex-wrap items-center gap-3 mt-4">
+              <div className="flex flex-col sm:flex-wrap sm:flex-row sm:items-center gap-3 mt-4">
                 <button
                   type="button"
                   onClick={holdThis}
                   disabled={!draft.trim() || loading}
-                  className="px-5 py-2.5 rounded-full border border-[#F5ECD7]/30 text-[#F5ECD7] text-xs tracking-wide disabled:opacity-40"
+                  className="min-h-10 px-5 py-2.5 rounded-full border border-[#F5ECD7]/30 text-[#F5ECD7] text-xs tracking-wide disabled:opacity-40"
                 >
                   Just hold this
                 </button>
                 <button
                   type="submit"
                   disabled={!draft.trim() || loading}
-                  className="px-5 py-2.5 rounded-full border border-[#F5ECD7]/50 text-[#F5ECD7] text-xs tracking-wide disabled:opacity-40"
+                  className="min-h-10 px-5 py-2.5 rounded-full border border-[#F5ECD7]/50 text-[#F5ECD7] text-xs tracking-wide disabled:opacity-40"
                 >
                   Talk with me
                 </button>

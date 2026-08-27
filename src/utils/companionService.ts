@@ -17,6 +17,24 @@ function isSanctuaryOffer(value: unknown): value is SanctuaryType {
   return value === 'studio' || value === 'library' || value === 'garden' || value === 'arcade';
 }
 
+export function parseCompanionProxyPayload(data: unknown): CompanionReply {
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !('text' in data) ||
+    typeof (data as { text: unknown }).text !== 'string'
+  ) {
+    throw new Error('Invalid proxy response');
+  }
+
+  const payload = data as { text: string; crisis?: unknown; offer?: unknown };
+  return {
+    text: payload.text,
+    crisis: payload.crisis === true,
+    offer: isSanctuaryOffer(payload.offer) ? payload.offer : null,
+  };
+}
+
 export async function sendCompanionMessage(input: {
   mode: CompanionMode;
   message: string;
@@ -45,21 +63,7 @@ export async function sendCompanionMessage(input: {
   if (!response.ok) throw new Error(`Claude proxy error: ${response.status}`);
 
   const data: unknown = await response.json();
-  if (
-    typeof data !== 'object' ||
-    data === null ||
-    !('text' in data) ||
-    typeof (data as { text: unknown }).text !== 'string'
-  ) {
-    throw new Error('Invalid proxy response');
-  }
-
-  const payload = data as { text: string; crisis?: unknown; offer?: unknown };
-  return {
-    text: payload.text,
-    crisis: payload.crisis === true,
-    offer: isSanctuaryOffer(payload.offer) ? payload.offer : null,
-  };
+  return parseCompanionProxyPayload(data);
 }
 
 const HELD_KEY = 'solace_companion_held';

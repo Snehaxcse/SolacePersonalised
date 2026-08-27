@@ -52,21 +52,21 @@ export default function StudioRitual({
             <p className="text-[#6B4226]/70 text-xs font-light text-center mb-4">
               you don't have to make sense of it.
             </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-              <button type="button" onClick={onKeep} className="text-[#6B4226] text-xs tracking-wide hover:text-[#C4622D]">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button type="button" onClick={onKeep} className="min-h-9 px-3.5 py-1.5 rounded-full border border-[#6B4226]/20 text-[#6B4226] text-xs tracking-wide hover:border-[#C4622D]/50 hover:text-[#C4622D]">
                 keep this
               </button>
-              <button type="button" onClick={onRequestRelease} className="text-[#6B4226] text-xs tracking-wide hover:text-[#C4622D]">
+              <button type="button" onClick={onRequestRelease} className="min-h-9 px-3.5 py-1.5 rounded-full border border-[#6B4226]/20 text-[#6B4226] text-xs tracking-wide hover:border-[#C4622D]/50 hover:text-[#C4622D]">
                 let it go
               </button>
-              <button type="button" onClick={onSit} className="text-[#6B4226] text-xs tracking-wide hover:text-[#C4622D]">
+              <button type="button" onClick={onSit} className="min-h-9 px-3.5 py-1.5 rounded-full border border-[#6B4226]/20 text-[#6B4226] text-xs tracking-wide hover:border-[#C4622D]/50 hover:text-[#C4622D]">
                 sit with it
               </button>
               <button
                 type="button"
                 onClick={onReflect}
                 disabled={aiLoading}
-                className="text-[#6B4226] text-xs tracking-wide hover:text-[#C4622D] disabled:opacity-40"
+                className="min-h-9 px-3.5 py-1.5 rounded-full border border-[#6B4226]/20 text-[#6B4226] text-xs tracking-wide hover:border-[#C4622D]/50 hover:text-[#C4622D] disabled:opacity-40"
               >
                 reflect with Solace
               </button>
@@ -74,7 +74,7 @@ export default function StudioRitual({
             <button
               type="button"
               onClick={onTalk}
-              className="mt-3 block mx-auto text-[#6B4226]/70 text-[11px] tracking-wide hover:text-[#C4622D]"
+              className="mt-3 block mx-auto min-h-8 text-[#6B4226]/70 text-[11px] tracking-wide hover:text-[#C4622D]"
             >
               talk about this
             </button>
@@ -102,11 +102,11 @@ export default function StudioRitual({
             <p className="text-[#6B4226]/75 text-xs font-light text-center leading-5 mb-4">
               it will fade from the canvas. you can cancel. pieces already in your gallery stay.
             </p>
-            <div className="flex items-center justify-center gap-4">
-              <button type="button" onClick={onConfirmRelease} className="text-[#C4622D] text-xs tracking-wide">
+            <div className="flex items-center justify-center gap-2">
+              <button type="button" onClick={onConfirmRelease} className="min-h-9 px-4 py-1.5 rounded-full border border-[#C4622D]/40 text-[#C4622D] text-xs tracking-wide">
                 release
               </button>
-              <button type="button" onClick={onCancelRelease} className="text-[#6B4226] text-xs tracking-wide">
+              <button type="button" onClick={onCancelRelease} className="min-h-9 px-4 py-1.5 rounded-full border border-[#6B4226]/20 text-[#6B4226] text-xs tracking-wide">
                 keep it here
               </button>
             </div>
