@@ -150,6 +150,16 @@ export default function Landing() {
             >
               take the questions again
             </motion.button>
+            <motion.button
+              type="button"
+              initial={enter ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: reduceMotion ? 0 : 1, delay: reduceMotion ? 0 : 1.7 }}
+              onClick={() => navigate('/companion')}
+              className="mt-4 text-[11px] font-light text-white/65 hover:text-white tracking-wide transition-colors duration-300 rounded-sm"
+            >
+              sit with the companion
+            </motion.button>
           </>
         ) : (
           <>
@@ -182,6 +192,16 @@ export default function Landing() {
               whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             >
               <span className="relative z-10">Begin</span>
+            </motion.button>
+            <motion.button
+              type="button"
+              initial={enter ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: reduceMotion ? 0 : 0.8, delay: reduceMotion ? 0 : 1.7 }}
+              onClick={() => navigate('/companion')}
+              className="mt-6 text-[11px] font-light text-white/65 hover:text-white tracking-wide transition-colors duration-300 rounded-sm"
+            >
+              sit with the companion
             </motion.button>
           </>
         )}

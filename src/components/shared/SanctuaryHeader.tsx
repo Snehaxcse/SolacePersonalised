@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DoorOpen } from 'lucide-react';
 import { useAiConsent } from '../../context/AiConsentContext';
@@ -9,12 +9,13 @@ import { readSuggestedSanctuary } from '../../utils/solaceMemory';
 import { SANCTUARIES, isSanctuaryType, type SanctuaryType } from '../../utils/sanctuaries';
 
 interface Props {
-  sanctuary: SanctuaryType;
+  sanctuary?: SanctuaryType;
   textColor?: string;
 }
 
 export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { type } = useParams<{ type: string }>();
   const { preference, openSettings } = useAiConsent();
   const [supportOpen, setSupportOpen] = useState(false);
@@ -22,6 +23,8 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
 
   const current = isSanctuaryType(type) ? type : null;
   const suggested = readSuggestedSanctuary();
+  const onCompanion = location.pathname === '/companion';
+  const spaceLabel = sanctuary ? SANCTUARIES[sanctuary].label : 'companion';
 
   const aiLabel = preference === 'enabled'
     ? 'AI features are on. Open AI settings.'
@@ -50,10 +53,19 @@ export default function SanctuaryHeader({ sanctuary, textColor = 'text-current' 
           </span>
           <span className={`${textColor} opacity-50`}>/</span>
           <span className={`text-xs font-light ${textColor} opacity-80 tracking-widest uppercase`}>
-            {SANCTUARIES[sanctuary].label}
+            {spaceLabel}
           </span>
         </button>
         <nav className="flex items-center gap-3 sm:gap-4" aria-label="Sanctuary">
+          <button
+            type="button"
+            onClick={() => navigate('/companion')}
+            className={`text-xs ${textColor} opacity-80 hover:opacity-100 transition-opacity duration-300 tracking-wide rounded-sm`}
+            aria-label="Solace Companion, an AI conversation"
+            aria-current={onCompanion ? 'page' : undefined}
+          >
+            talk
+          </button>
           <button
             type="button"
             onClick={openSettings}

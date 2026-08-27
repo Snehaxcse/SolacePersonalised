@@ -58,7 +58,7 @@ export default function AiConsentModal({ open, current, onChoose, onDismiss }: P
                 confidential medical care.
               </p>
               <p>
-                You can use every sanctuary without AI. You can change this preference later from the
+                You can use every sanctuary without AI. Companion conversation also stays optional. You can change this preference later from the
                 header. Press Escape if you want to choose later; AI stays off until you decide.
               </p>
             </div>
