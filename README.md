@@ -4,135 +4,140 @@ A private space with four rooms and an optional companion.
 
 Not therapy. Not a diagnosis. Just a place that can feel like yours.
 
-**Status:** production-ready static SPA + one Netlify Function. No live URL in this repository yet.
+**Live Demo:** [https://solacepersonalised.netlify.app/](https://solacepersonalised.netlify.app/)
 
-**Live demo:** _add the Netlify URL here after first deploy._
+The core local-first sanctuary experience works without AI. The public demo currently runs without live AI responses. All local sanctuary features remain available.
 
-Solace does not score you, label a personality, or try to fix you. A short set of questions can suggest a room for today. You can ignore the suggestion. You can return later. Persistence stays on this device unless you opt into AI.
+**Status:** Solace v1 — deployed. Core sanctuary experience: available. Live AI: not enabled on the public demo yet.
 
-## What makes it different
-
-- Four need-based rooms, not a diagnosis or a fifth “catch-all”
-- Local-first storage; AI is named, optional, and server-proxied
-- Companion is an AI conversation that does not pretend to be human, therapy, or emergency care
-- Accessibility (keyboard, reduced motion, focus traps) is treated as part of emotional safety
-- Features were removed on purpose: no accounts, no streaks-as-worth, no long-term AI memory
+Solace is a privacy-first digital space for reflection and emotional decompression. It is organized around four need-based sanctuaries rather than diagnoses or personality labels. The rooms work on their own. An optional AI Companion can sit with you when a server-side provider is configured.
 
 ## The four sanctuaries
 
-| Room | When you need |
-| --- | --- |
-| **Studio** | to let something out — draw, sit with it, keep it or let it go |
-| **Library** | somewhere quiet — private journal, a page to read, optional breathing |
-| **Garden** | to slow down — return, notice, leave something small |
-| **Arcade** | your mind somewhere else — three untimed activities |
+**Studio** — “I need to let something out.”  
+Expression through drawing and a create → sit with it → keep / release ritual.
 
-Returning visitors are not auto-redirected. Home stays home.
+**Library** — “I need somewhere quiet.”  
+Local dated journaling, a quiet page to read, optional reflection, and breathing.
+
+**Garden** — “I need to slow down.”  
+A plant that grows through returning, without streaks or punishment, plus “leave something here.”
+
+**Arcade** — “I need my mind somewhere else.”  
+Gentle distraction through memory, word association, and color sorting.
+
+A short set of questions can suggest a room for today. You can ignore the suggestion. Returning visitors are not auto-redirected. Home stays home.
 
 ## Solace Companion
 
-A dedicated route at `/companion`. Session-only chat. Four modes. You can **Just hold this** on the device without sending it to AI.
+Companion is an **optional** AI layer at `/companion`, not the product itself.
 
-It stays with you. It does not try to fix you. It is not a therapist, not a person, and not emergency care.
+- Four conversation modes
+- Explicit AI identity: it does not pretend to be a person or a therapist
+- Consent before any request leaves the device
+- Session-only conversation (gone on refresh)
+- **Just Hold This** never sends the text to AI
+- Anti-dependency and non-diagnostic boundaries on the server
+- Provider calls go through a Netlify Function; the key never ships in the browser
+
+The current public demo does not have an AI provider key configured, so live Companion responses are disabled. Holding a note, choosing a mode, and using every sanctuary still work.
 
 ## Privacy-first architecture
 
-- Journal, gallery, garden notes, and quiz memory: `localStorage` on this device
-- Held Companion notes: `sessionStorage` for this visit only
-- Sanctuary content is not auto-sent to Companion; Studio drawings are not auto-analyzed
-- `ANTHROPIC_API_KEY` lives only in the Netlify Function environment — never in the browser bundle, never as `VITE_*`
+- Journal pages stay in this browser’s storage by default
+- Garden notes stay local
+- Studio gallery stays local
+- Quiz suggestion and weather stay local
+- Companion conversation is session-only (in-memory for that visit)
+- Just Hold This stays on this device for the browser session (`sessionStorage`)
+- Sanctuary content is never automatically passed into Companion
+- Studio drawings are not automatically analyzed
+- AI runs only after explicit consent
+- Provider keys are server-side only (`ANTHROPIC_API_KEY`, never `VITE_*`)
+- No accounts
+- No analytics or social tracking
+
+Browser storage is local to the device and the origin. It is not encrypted.
+
+## Safety
+
+Solace is not therapy, a diagnosis, medical advice, or emergency care.
+
+Companion was designed not to impersonate a therapist or a human relationship. It does not claim to replace people. A support surface in the header points to external crisis directories; Solace does not provide emergency intervention.
 
 ## Tech stack
 
-Vite · React 18 · TypeScript · Tailwind CSS · Framer Motion · React Router · Netlify Functions · Vitest
+React · TypeScript · Vite · Tailwind CSS · Framer Motion · React Router · Netlify Functions · Vitest
 
-## Screenshots
+AI provider integration is optional and server-side.
 
-Add stills to `docs/screenshots/` when you capture them. Use mock writing only — never real journal or Companion text.
+## Engineering highlights
 
-| File | Scene |
-| --- | --- |
-| `01-landing.png` | First visit, Begin + Companion |
-| `02-returning.png` | Welcome back, suggested room |
-| `03-studio.png` | Empty canvas and tools |
-| `04-studio-ritual.png` | Keep / let go / sit with it |
-| `05-library.png` | Journal list, “kept on this device” |
-| `06-garden.png` | Mid-growth plant, leave-something |
-| `07-arcade.png` | Three activity choices |
-| `08-companion-modes.png` | Mode selection, AI identity visible |
-| `09-companion-talk.png` | One short mock exchange |
-| `10-mobile.png` | Header + room at 375px |
-
-## Architecture
-
-```
-src/pages                 Landing, quiz, companion, sanctuary router
-src/components            Four rooms, Companion, shared chrome
-src/utils                 Scoring, journal store, sanctuary metadata, AI clients
-netlify/functions         claude.ts — allowlisted Anthropic proxy
-src/utils/sanctuaries.ts  Source of truth for room ids, labels, needs, routes
-```
-
-Client AI calls `/.netlify/functions/claude`. Companion replies are JSON. Sanctuary AI falls back to local copy if the proxy is unavailable.
-
-## Accessibility
-
-Skip link, visible focus, dialog focus traps, Escape to close, keyboard quiz (no auto-advance), roving library tabs, `prefers-reduced-motion` via Framer `MotionConfig` and custom animation.
+- Local-first persistence, with safe migrations for journal and related storage
+- Server-side AI proxy instead of exposing provider keys
+- Explicit AI consent
+- Structured Companion safety boundaries (identity, crisis handoff, anti-dependency)
+- Accessibility: keyboard navigation, focus traps, reduced motion, contrast
+- Responsive sanctuary layouts down to 320px
+- SPA fallback, security headers, and CSP on Netlify
+- Unit tests for scoring, storage/migrations, Garden progress, sanctuary metadata, and Companion parsing
 
 ## Testing
 
+26 tests across 5 test files. No automated browser / E2E suite.
+
 ```bash
 npm test
+npm run lint
+npm run build
 ```
-
-Vitest smoke tests for sanctuary scoring, journal migration, garden progress helpers, sanctuary metadata, and Companion payload parsing.
 
 ## Local setup
 
 ```bash
+git clone <this-repository>
+cd Solacepersonalised
 npm install
 npm run dev
 ```
 
-The app works without an API key. Optional AI stays off until you enable it and configure the function.
+AI is optional. Sanctuaries work without a key.
 
-```bash
-npm run build
-npm run preview
-npm run lint
-npm test
-```
+For live AI locally (`npx netlify dev`) or on Netlify, set **server-side** `ANTHROPIC_API_KEY` only. Do not create `VITE_ANTHROPIC_API_KEY`. Do not commit `.env`.
 
-## Environment
+## Deployment
 
-For local functions (`npx netlify dev`), copy `.env.example` to `.env`:
+Live: [https://solacepersonalised.netlify.app/](https://solacepersonalised.netlify.app/)
 
-```
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-```
+Netlify:
 
-Server-only. Do not prefix with `VITE_`. Do not commit `.env`.
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Functions directory: `netlify/functions`
 
-## Netlify
+`ANTHROPIC_API_KEY` is an optional Netlify environment variable. The public site currently omits it, so local rooms stay available and live AI replies stay off.
 
-`netlify.toml` already sets:
+SPA routes (`/quiz`, `/companion`, `/sanctuary/*`) refresh via `/*` → `/index.html`. Security headers and CSP are in `netlify.toml`.
 
-- Build: `npm run build`
-- Publish: `dist`
-- Functions: `netlify/functions`
-- Function `claude` timeout: 26s
-- SPA fallback: `/*` → `/index.html` (`force = false`)
-- Security headers + CSP
+## Screenshots
 
-**Deploy**
+Stills to add (mock copy only — never real journal or Companion text):
 
-1. Push this repo to GitHub.
-2. New Netlify site from that repo. Build settings come from `netlify.toml`.
-3. Site settings → Environment variables → `ANTHROPIC_API_KEY` (production, and preview if you want AI there). Never commit the real key.
-4. Deploy. Confirm `https://YOUR-SITE/quiz`, `/companion`, and `/sanctuary/garden` still work after a refresh.
-5. When the URL is stable, set canonical + `og:url` and make `og:image` an absolute URL to `/og.png` (see comments in `index.html`).
+- Landing
+- Studio
+- Library
+- Garden
+- Arcade
+- Companion
 
-Open Graph image: `public/og.png` (1200×630). Relative `/og.png` is wired now; some crawlers want the absolute URL after deploy.
+## Roadmap
+
+- Evaluate a sustainable, privacy-appropriate AI provider for the public demo
+- Production QA against the live site
+- Absolute social-preview URLs once sharing is in use
+- Continued accessibility testing
+
+Not planned: accounts, a social layer, gamification, diagnoses, or a fifth sanctuary.
 
 ## Disclaimer
 
